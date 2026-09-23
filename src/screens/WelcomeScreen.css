@@ -1,0 +1,56 @@
+.cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+}
+
+/* Heights are tuned so the three marks carry equal optical weight, not equal
+   pixel height: the Jamón lockup is portrait and stacked, the other two are
+   landscape. The Teruel PNGs are small (129x155 and 135x68) so each stays
+   under its natural height — ask the Consejo for SVG before going larger. */
+.cover__mark {
+  display: block;
+  block-size: auto;
+  inline-size: auto;
+}
+
+.cover__mark--jamon {
+  max-block-size: 6.5rem; /* 104px of a 155px original */
+}
+
+.cover__mark--cerdo {
+  max-block-size: 3.5rem; /* 56px of a 68px original */
+}
+
+.cover__mark--circe {
+  max-block-size: 3.5rem;
+}
+
+.cover__rule {
+  flex: none;
+  inline-size: 1px;
+  block-size: 4.5rem;
+  background: var(--color-border);
+}
+
+@media (max-width: 30rem) {
+  .cover {
+    gap: var(--space-4);
+  }
+
+  .cover__mark--jamon {
+    max-block-size: 5rem;
+  }
+
+  .cover__mark--cerdo,
+  .cover__mark--circe {
+    max-block-size: 2.7rem;
+  }
+
+  .cover__rule {
+    block-size: 3.25rem;
+  }
+}

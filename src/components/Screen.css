@@ -1,0 +1,230 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvh;
+  background: var(--color-page);
+}
+
+/* ─── The red band ───────────────────────────────────────────────────────
+   Red is the primary colour. The band redefines the semantic tokens inside
+   itself, so Logo, ProgressBar and the headings invert with no component
+   change — that is what the aliases in tokens.css are for. */
+.screen__panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  /* Base colour separate from the gradient: it is the colour the band's text
+     is actually read against, and the fallback if the gradient never paints. */
+  background-color: var(--color-panel);
+  background-image:
+    radial-gradient(90% 140% at 6% 0%, #8a2749 0%, rgba(138, 39, 73, 0) 62%),
+    linear-gradient(104deg, var(--color-wine-700) 0%, var(--color-wine-900) 100%);
+
+  --color-heading: var(--color-on-panel);
+  --color-text: var(--color-on-panel);
+  --color-text-muted: var(--color-panel-muted);
+  --color-accent: var(--color-on-panel);
+  --color-accent-hover: var(--color-panel-muted);
+  --color-border: var(--color-panel-border);
+  --color-border-strong: var(--color-panel-muted);
+  --color-cream-200: var(--color-panel-track); /* the ProgressBar track */
+  --progress-fill: var(--color-panel-fill);
+  --color-focus: var(--color-cream-50);
+
+  color: var(--color-on-panel);
+}
+
+/* The one gold accent edge, at 1px, along the foot of the band. */
+.screen__panel::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  inset-block-end: 0;
+  inset-inline: 0;
+  block-size: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-panel-rule) 18%,
+    var(--color-panel-rule) 82%,
+    transparent
+  );
+}
+
+/* ─── Shared measure ─────────────────────────────────────────────────────
+   The band's content and the answer below it use the SAME container, so the
+   question and the first option share one vertical axis. */
+.screen__panel-inner,
+.screen__main,
+.screen__footer {
+  inline-size: 100%;
+  max-inline-size: var(--measure);
+  margin-inline: auto;
+  padding-inline: var(--space-5);
+}
+
+.screen[data-width='wide'] .screen__panel-inner,
+.screen[data-width='wide'] .screen__main,
+.screen[data-width='wide'] .screen__footer {
+  max-inline-size: var(--measure-wide);
+}
+
+.screen__panel-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-block: var(--space-5) var(--space-6);
+}
+
+.screen__brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-block-size: 2.25rem;
+}
+
+/* The white CIRCE mark rides the far end of the band. Small on purpose: it
+   is attribution, not the brand of the questionnaire. */
+.screen__partner {
+  flex: none;
+  block-size: 2.1rem;
+  inline-size: auto;
+}
+
+@media (max-width: 30rem) {
+  .screen__partner {
+    block-size: 1.7rem;
+  }
+}
+
+.screen__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.screen__title {
+  font-size: var(--text-2xl);
+  max-inline-size: 26ch;
+}
+
+.screen__subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  max-inline-size: 60ch;
+}
+
+/* ─── Centred variant: the cover and the thank-you ───────────────────────── */
+.screen[data-align='center'] .screen__heading,
+.screen[data-align='center'] .screen__main {
+  align-items: center;
+  text-align: center;
+}
+
+/* On the bookends the wordmark centres rather than hugging the left edge. */
+.screen[data-align='center'] .screen__brand {
+  justify-content: center;
+  text-align: center;
+}
+
+.screen[data-align='center'] .screen__title,
+.screen[data-align='center'] .screen__subtitle {
+  margin-inline: auto;
+}
+
+/* The bookends have little content, so it sits in the middle of the cream
+   rather than clinging to the top of a tall empty area. */
+.screen[data-align='center'] .screen__main {
+  justify-content: center;
+}
+
+/* The cover title runs the full band instead of the reading measure, so it
+   holds one line where there is room. It still wraps on a narrow screen. */
+.screen[data-title='wide'] .screen__panel-inner {
+  max-inline-size: var(--measure-wide);
+}
+
+.screen[data-title='wide'] .screen__title {
+  max-inline-size: none;
+}
+
+/* ─── The cream answer area ──────────────────────────────────────────────── */
+.screen__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-page);
+}
+
+.screen__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-block: var(--space-6) var(--space-5);
+}
+
+/* The actions stay reachable with one thumb, and while a long list scrolls.
+   The fade above them makes a list that runs under the bar read as "there is
+   more below", rather than as a card clipped by accident. */
+.screen__footer {
+  position: sticky;
+  inset-block-end: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block: var(--space-4) var(--space-3);
+  background: var(--color-page);
+  border-block-start: var(--border-hairline) solid var(--color-border);
+}
+
+.screen__footer::before {
+  content: '';
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline: 0;
+  block-size: var(--space-6);
+  background: linear-gradient(to bottom, rgba(252, 248, 240, 0), var(--color-page));
+  pointer-events: none;
+}
+
+.screen__actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* A lone button centres. It used to be pushed to the right, which on the
+   cover read as an accident — there was nothing on the left to balance it. */
+.screen__actions:has(> .button:only-child) {
+  justify-content: center;
+}
+
+.screen__footer-extra {
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 40rem) {
+  .screen__panel-inner,
+  .screen__main,
+  .screen__footer {
+    padding-inline: var(--space-6);
+  }
+
+  .screen__panel-inner {
+    padding-block: var(--space-6) var(--space-7);
+  }
+
+  .screen__title {
+    font-size: var(--text-3xl);
+  }
+
+  .screen__main {
+    padding-block: var(--space-7) var(--space-5);
+  }
+}

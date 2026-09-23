@@ -1,0 +1,11 @@
+.icon {
+  inline-size: 100%;
+  block-size: 100%;
+  display: block;
+}
+
+.seal {
+  inline-size: 100%;
+  block-size: auto;
+  display: block;
+}

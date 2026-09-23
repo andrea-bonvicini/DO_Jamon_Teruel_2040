@@ -1,0 +1,27 @@
+/* No side tab: a coloured border-inline-start above 1px is a costume for
+   hierarchy. The tone is carried by the fill, a full hairline border and the
+   text colour, which is what the panel and the option cards already do. */
+.status {
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-hairline) solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: 1.62;
+}
+
+.status--info {
+  background: var(--color-info-bg);
+  color: var(--color-text);
+}
+
+.status--success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.status--error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}

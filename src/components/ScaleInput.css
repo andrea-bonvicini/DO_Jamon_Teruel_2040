@@ -1,0 +1,84 @@
+.scale {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.scale__points {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(2.75rem, 1fr));
+  gap: var(--space-2);
+}
+
+/* A 0–10 NPS scale gets a fixed six-column grid so it wraps predictably
+   instead of squeezing eleven boxes onto one line. */
+.scale__points[data-count='11'] {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.scale__point {
+  display: grid;
+  place-items: center;
+  min-block-size: var(--tap-target);
+  background: var(--color-surface);
+  border: var(--border-thick) solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.scale__point:hover {
+  border-color: var(--color-border-strong);
+}
+
+.scale__point[data-checked] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.scale__input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  margin: 0;
+}
+
+.scale__input:focus-visible + .scale__number {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.scale__number {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
+.scale__labels {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.scale__labels > span:last-child {
+  text-align: end;
+}
+
+@media (min-width: 30rem) {
+  .scale__points[data-count='11'] {
+    grid-template-columns: repeat(11, 1fr);
+  }
+}

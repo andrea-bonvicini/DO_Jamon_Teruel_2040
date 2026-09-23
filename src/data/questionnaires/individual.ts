@@ -1,0 +1,366 @@
+import type { Questionnaire, ShowIf } from '../types'
+
+/**
+ * Transcribed from `2_Encuesta_Usuario_Final_DO_Jamon_Teruel.docx`
+ * ("ENCUESTA A USUARIO FINAL — Cuestionario al consumidor").
+ *
+ * The document's internal "→ Qué buscamos" notes are deliberately NOT
+ * transcribed: the source states they are internal and do not appear in the
+ * version the respondent sees.
+ *
+ * Question 6 marks "Nunca" with "(fin del cuestionario)". That is modelled as
+ * a conditional rather than an early-exit step: every question from 7 onwards
+ * carries CONSUMES_JAMON, so a respondent who answers "Nunca" goes straight to
+ * the thank-you screen. See DECISIONS.md.
+ */
+const CONSUMES_JAMON: ShowIf = {
+  questionId: 'I-Q06',
+  optionIds: ['varias-semana', 'semanal', 'mensual', 'especiales'],
+}
+
+/** Comunidades autónomas + ciudades autónomas. */
+const COMUNIDADES = [
+  { id: 'andalucia', text: 'Andalucía' },
+  { id: 'aragon', text: 'Aragón' },
+  { id: 'asturias', text: 'Asturias' },
+  { id: 'baleares', text: 'Illes Balears' },
+  { id: 'canarias', text: 'Canarias' },
+  { id: 'cantabria', text: 'Cantabria' },
+  { id: 'castilla-la-mancha', text: 'Castilla-La Mancha' },
+  { id: 'castilla-y-leon', text: 'Castilla y León' },
+  { id: 'cataluna', text: 'Cataluña' },
+  { id: 'ceuta', text: 'Ceuta' },
+  { id: 'extremadura', text: 'Extremadura' },
+  { id: 'galicia', text: 'Galicia' },
+  { id: 'la-rioja', text: 'La Rioja' },
+  { id: 'madrid', text: 'Comunidad de Madrid' },
+  { id: 'melilla', text: 'Melilla' },
+  { id: 'murcia', text: 'Región de Murcia' },
+  { id: 'navarra', text: 'Comunidad Foral de Navarra' },
+  { id: 'pais-vasco', text: 'País Vasco' },
+  { id: 'valencia', text: 'Comunitat Valenciana' },
+]
+
+export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
+  id: 'individual',
+  name: 'Cuestionario al consumidor',
+  description: 'Unas preguntas sobre su consumo, su percepción y su conocimiento del jamón curado.',
+  estimatedDuration: '5–7 min',
+  version: 'individual@1.0.0',
+
+  sections: [
+    { id: 'clasificacion', order: 1, name: 'Bloque A · Clasificación' },
+    { id: 'consumo', order: 2, name: 'Bloque B · Consumo real' },
+    { id: 'valoracion', order: 3, name: 'Bloque C · Qué valora al comprar' },
+    { id: 'precio', order: 4, name: 'Bloque D · Disposición a pagar' },
+    { id: 'conocimiento', order: 5, name: 'Bloque E · Conocimiento y notoriedad' },
+    { id: 'salud', order: 6, name: 'Bloque F · Salud, imagen y recomendación' },
+  ],
+
+  questions: [
+    // ─── Bloque A · Clasificación ──────────────────────────────────────────
+    {
+      id: 'I-Q01',
+      sectionId: 'clasificacion',
+      label: 'Edad',
+      text: 'Edad',
+      help: 'Marque un tramo.',
+      type: 'single_choice',
+      required: true,
+      options: [
+        { id: '18-29', text: '18–29' },
+        { id: '30-44', text: '30–44' },
+        { id: '45-59', text: '45–59' },
+        { id: '60-mas', text: '60 o más' },
+      ],
+    },
+    {
+      id: 'I-Q02',
+      sectionId: 'clasificacion',
+      label: 'Sexo',
+      text: 'Sexo',
+      type: 'single_choice',
+      required: true,
+      options: [
+        { id: 'mujer', text: 'Mujer' },
+        { id: 'hombre', text: 'Hombre' },
+        { id: 'ns-nc', text: 'Prefiero no decirlo' },
+      ],
+    },
+    {
+      id: 'I-Q03',
+      sectionId: 'clasificacion',
+      label: 'Comunidad autónoma',
+      text: 'Comunidad autónoma de residencia',
+      type: 'single_choice',
+      display: 'select',
+      required: true,
+      options: COMUNIDADES,
+    },
+    {
+      id: 'I-Q04',
+      sectionId: 'clasificacion',
+      label: 'Tamaño de localidad',
+      text: 'Tamaño de su localidad',
+      type: 'single_choice',
+      required: true,
+      options: [
+        { id: 'rural', text: 'Rural (menos de 5.000 hab.)' },
+        { id: 'ciudad-media', text: 'Ciudad pequeña/mediana' },
+        { id: 'gran-ciudad', text: 'Gran ciudad' },
+      ],
+    },
+    {
+      id: 'I-Q05',
+      sectionId: 'clasificacion',
+      label: 'Quién compra',
+      text: '¿Quién compra la alimentación en su hogar?',
+      type: 'single_choice',
+      required: true,
+      options: [
+        { id: 'yo', text: 'Yo, principalmente' },
+        { id: 'compartido', text: 'Compartido' },
+        { id: 'otra-persona', text: 'Otra persona' },
+      ],
+    },
+
+    // ─── Bloque B · Consumo real ───────────────────────────────────────────
+    {
+      id: 'I-Q06',
+      sectionId: 'consumo',
+      label: 'Frecuencia de consumo',
+      text: '¿Con qué frecuencia consume jamón curado?',
+      type: 'single_choice',
+      required: true,
+      options: [
+        { id: 'varias-semana', text: 'Varias veces por semana' },
+        { id: 'semanal', text: 'Semanal' },
+        { id: 'mensual', text: 'Alguna vez al mes' },
+        { id: 'especiales', text: 'Solo en ocasiones especiales' },
+        { id: 'nunca', text: 'Nunca' },
+      ],
+    },
+    {
+      id: 'I-Q07',
+      sectionId: 'consumo',
+      label: 'Ocasiones de consumo',
+      text: '¿En qué ocasiones lo consume?',
+      help: 'Puede marcar varias respuestas.',
+      type: 'multi_choice',
+      required: true,
+      minSelections: 1,
+      showIf: CONSUMES_JAMON,
+      options: [
+        { id: 'diario', text: 'A diario / comida habitual' },
+        { id: 'aperitivo', text: 'Aperitivo o picoteo' },
+        { id: 'celebraciones', text: 'Celebraciones' },
+        { id: 'regalo', text: 'Como regalo' },
+      ],
+    },
+    {
+      id: 'I-Q08',
+      sectionId: 'consumo',
+      label: 'Canal de compra',
+      text: '¿Dónde lo compra habitualmente?',
+      help: 'Puede marcar varias respuestas.',
+      type: 'multi_choice',
+      required: true,
+      minSelections: 1,
+      showIf: CONSUMES_JAMON,
+      options: [
+        { id: 'supermercado', text: 'Supermercado / gran superficie' },
+        { id: 'especializada', text: 'Tienda especializada / charcutería' },
+        { id: 'mercado', text: 'Mercado' },
+        { id: 'online', text: 'Online' },
+        { id: 'productor', text: 'Directo al productor' },
+      ],
+    },
+
+    // ─── Bloque C · Qué valora al comprar ──────────────────────────────────
+    {
+      id: 'I-Q09',
+      sectionId: 'valoracion',
+      label: 'Importancia al comprar',
+      text: 'Al comprar un jamón curado, ¿qué importancia da a cada aspecto?',
+      type: 'scale_grid',
+      required: true,
+      min: 1,
+      max: 5,
+      minLabel: 'Nada importante',
+      maxLabel: 'Muy importante',
+      showIf: CONSUMES_JAMON,
+      rows: [
+        { id: 'sabor', text: 'Sabor y calidad gustativa' },
+        { id: 'precio', text: 'Precio' },
+        { id: 'origen', text: 'Origen / procedencia' },
+        { id: 'marca', text: 'Marca' },
+        { id: 'dop', text: 'Que tenga Denominación de Origen (D.O.P.)' },
+        { id: 'bienestar', text: 'Bienestar animal' },
+        { id: 'alimentacion', text: 'Alimentación del cerdo' },
+        { id: 'curacion', text: 'Tiempo de curación' },
+        { id: 'aspecto', text: 'Aspecto y grasa infiltrada' },
+        { id: 'salud', text: 'Salud (sal, aditivos)' },
+        { id: 'formato', text: 'Formato y comodidad' },
+        { id: 'sostenibilidad', text: 'Sostenibilidad ambiental' },
+        { id: 'local', text: 'Que sea producto local/español' },
+      ],
+    },
+
+    // ─── Bloque D · Disposición a pagar (Van Westendorp) ───────────────────
+    {
+      id: 'I-Q10',
+      sectionId: 'precio',
+      label: 'Precio: demasiado barato',
+      text: '¿A qué precio le parecería tan barato que dudaría de su calidad?',
+      help: 'Referencia: un jamón curado con Denominación de Origen, pieza de calidad media-alta.',
+      type: 'number',
+      required: true,
+      min: 0,
+      max: 500,
+      unit: '€/kg',
+      showIf: CONSUMES_JAMON,
+    },
+    {
+      id: 'I-Q11',
+      sectionId: 'precio',
+      label: 'Precio: barato',
+      text: '¿A qué precio le parecería barato / buena oportunidad?',
+      help: 'Referencia: un jamón curado con Denominación de Origen, pieza de calidad media-alta.',
+      type: 'number',
+      required: true,
+      min: 0,
+      max: 500,
+      unit: '€/kg',
+      showIf: CONSUMES_JAMON,
+    },
+    {
+      id: 'I-Q12',
+      sectionId: 'precio',
+      label: 'Precio: empieza a ser caro',
+      text: '¿A qué precio empezaría a parecerle caro?',
+      help: 'Referencia: un jamón curado con Denominación de Origen, pieza de calidad media-alta.',
+      type: 'number',
+      required: true,
+      min: 0,
+      max: 500,
+      unit: '€/kg',
+      showIf: CONSUMES_JAMON,
+    },
+    {
+      id: 'I-Q13',
+      sectionId: 'precio',
+      label: 'Precio: demasiado caro',
+      text: '¿A qué precio le parecería tan caro que no lo compraría?',
+      help: 'Referencia: un jamón curado con Denominación de Origen, pieza de calidad media-alta.',
+      type: 'number',
+      required: true,
+      min: 0,
+      max: 500,
+      unit: '€/kg',
+      showIf: CONSUMES_JAMON,
+    },
+    {
+      id: 'I-Q14',
+      sectionId: 'precio',
+      label: 'Elección D.O. vs sin sello',
+      text: 'Ante dos jamones equivalentes —uno CON D.O. a 22 €/kg y otro SIN sello a 16 €/kg— ¿cuál elegiría?',
+      type: 'single_choice',
+      required: true,
+      showIf: CONSUMES_JAMON,
+      options: [
+        { id: 'con-do', text: 'El de D.O. (22 €/kg)' },
+        { id: 'sin-sello', text: 'El sin sello (16 €/kg)' },
+        { id: 'indiferente', text: 'Me es indiferente' },
+      ],
+    },
+
+    // ─── Bloque E · Conocimiento y notoriedad ──────────────────────────────
+    {
+      id: 'I-Q15',
+      sectionId: 'conocimiento',
+      label: 'Conoce la D.O.',
+      text: '¿Conoce la D.O. Jamón de Teruel?',
+      type: 'single_choice',
+      required: true,
+      showIf: CONSUMES_JAMON,
+      options: [
+        { id: 'bien', text: 'Sí, la conozco bien' },
+        { id: 'suena', text: 'Me suena' },
+        { id: 'no', text: 'No la conozco' },
+      ],
+    },
+    {
+      id: 'I-Q16',
+      sectionId: 'conocimiento',
+      label: 'Qué garantiza una D.O.P.',
+      text: '¿Qué cree que garantiza una D.O.P.?',
+      help: 'Marque lo que crea correcto.',
+      type: 'multi_choice',
+      required: true,
+      minSelections: 1,
+      showIf: CONSUMES_JAMON,
+      options: [
+        { id: 'zona', text: 'Que procede de una zona concreta' },
+        { id: 'controles', text: 'Que hay controles de calidad' },
+        { id: 'alimentacion', text: 'Que el cerdo tiene una alimentación definida' },
+        { id: 'curacion', text: 'Un tiempo mínimo de curación' },
+        { id: 'mas-caro', text: 'Que es siempre más caro' },
+        { id: 'no-lo-se', text: 'No lo sé' },
+      ],
+    },
+    {
+      id: 'I-Q17',
+      sectionId: 'conocimiento',
+      label: 'Sabría distinguirlo',
+      text: '¿Cree que sabría distinguir un Jamón de Teruel de un serrano genérico?',
+      type: 'single_choice',
+      required: true,
+      showIf: CONSUMES_JAMON,
+      options: [
+        { id: 'si', text: 'Sí, claramente' },
+        { id: 'quiza', text: 'Quizá' },
+        { id: 'no', text: 'No' },
+      ],
+    },
+    {
+      id: 'I-Q18',
+      sectionId: 'conocimiento',
+      label: 'Asociación con Jamón de Teruel',
+      text: '¿Con qué asocia el Jamón de Teruel?',
+      type: 'short_text',
+      required: false,
+      maxLength: 200,
+      showIf: CONSUMES_JAMON,
+    },
+
+    // ─── Bloque F · Salud, imagen y recomendación ──────────────────────────
+    {
+      id: 'I-Q19',
+      sectionId: 'salud',
+      label: 'Percepción de salud',
+      text: '¿Considera el jamón curado un alimento saludable?',
+      type: 'single_choice',
+      required: true,
+      showIf: CONSUMES_JAMON,
+      options: [
+        { id: 'si', text: 'Sí' },
+        { id: 'moderacion', text: 'Con moderación' },
+        { id: 'no', text: 'No' },
+        { id: 'no-lo-se', text: 'No lo sé' },
+      ],
+    },
+    {
+      id: 'I-Q20',
+      sectionId: 'salud',
+      label: 'Recomendación (NPS)',
+      text: 'En una escala de 0 a 10, ¿recomendaría el Jamón de Teruel a un familiar o amigo?',
+      type: 'scale',
+      required: true,
+      min: 0,
+      max: 10,
+      minLabel: 'Nada probable',
+      maxLabel: 'Muy probable',
+      showIf: CONSUMES_JAMON,
+    },
+  ],
+}

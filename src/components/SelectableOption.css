@@ -1,0 +1,99 @@
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-block-size: var(--tap-target);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: var(--border-hairline) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
+}
+
+.option:hover:not([data-disabled]) {
+  border-color: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-selected);
+}
+
+.option[data-checked] {
+  border-color: var(--color-accent-hover);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-selected);
+}
+
+.option[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.62;
+  background: transparent;
+  box-shadow: none;
+}
+
+.option[data-disabled]:hover {
+  transform: none;
+  border-color: var(--color-border);
+}
+
+/* The input stays in the accessibility tree and keeps focus; only its paint
+   is replaced by .option__marker. */
+.option__input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  margin: 0;
+}
+
+.option__input:focus-visible ~ .option__marker {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.option__icon {
+  flex: none;
+  inline-size: 2rem;
+  block-size: 2rem;
+  color: var(--color-accent);
+}
+
+.option__label {
+  flex: 1;
+  font-size: var(--text-base);
+  line-height: 1.35;
+}
+
+.option__marker {
+  flex: none;
+  inline-size: 1.4rem;
+  block-size: 1.4rem;
+  border: var(--border-hairline) solid var(--color-border);
+  background: var(--color-surface);
+  display: grid;
+  place-items: center;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease);
+}
+
+.option__marker--radio { border-radius: 50%; }
+.option__marker--checkbox { border-radius: var(--radius-sm); }
+
+.option[data-checked] .option__marker {
+  border-color: var(--color-accent-hover);
+  background: var(--color-accent-hover);
+}
+
+.option[data-checked] .option__marker::after {
+  content: '';
+  inline-size: 0.55rem;
+  block-size: 0.3rem;
+  border-inline-start: 2px solid var(--color-on-accent);
+  border-block-end: 2px solid var(--color-on-accent);
+  transform: rotate(-45deg) translate(1px, -1px);
+}

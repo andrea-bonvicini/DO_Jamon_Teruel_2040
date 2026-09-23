@@ -1,0 +1,127 @@
+/*
+ * Design tokens — D.O. Jamón de Teruel questionnaire.
+ *
+ * Palette: raspberry wine on cream. Flat colour only: no gradients, no glass,
+ * no heavy shadows (CLAUDE.md rule 7). Contrast is checked against the page
+ * background, cream-50:
+ *   wine-900 on cream-50  13.4:1   wine-700 on cream-50  8.4:1
+ *   cream-50 on wine-700   8.4:1   muted    on cream-50  6.1:1
+ * All pass WCAG AA at every size; the first three pass AAA for body text.
+ */
+:root {
+  /* ─── Colour ─────────────────────────────────────────────────────────── */
+  /* Paleta de marca fijada por el Consejo Regulador. */
+  --color-wine-900: #641933; /* granate oscuro: profundidad y degradados */
+  --color-wine-700: #7b2140; /* granate principal */
+  --color-wine-500: #a33553; /* vino: hover y selección */
+  --color-wine-300: #d99cad;
+  --color-wine-100: #f0dce2;
+
+  /* Oro: sello y filetes. Sobre crema da 2,46:1, así que NUNCA lleva texto
+     ni bordes con significado sobre el área clara. */
+  --color-gold: #c39a4b;
+
+  --color-cream-50: #fcf8f0;
+  --color-cream-100: #f5eddd;
+  --color-cream-200: #ece0c9;
+  --color-cream-300: #e7dfd2; /* líneas y bordes */
+
+  --color-ink: #3a2a2e;
+  --color-muted: #6e5560;
+
+  --color-success: #2f5c3b;
+  --color-success-bg: #e4efe5;
+  --color-error: #8f1d1d;
+  --color-error-bg: #f8e3e3;
+  --color-info-bg: var(--color-cream-100);
+
+  /* Semantic aliases — components use these, never the raw scale. */
+  --color-page: var(--color-cream-50);
+  --color-surface: #ffffff;
+  --color-surface-sunken: var(--color-cream-100);
+  --color-border: var(--color-cream-300);
+  --color-border-strong: var(--color-wine-300);
+  --color-text: var(--color-ink);
+  --color-text-muted: var(--color-muted);
+  --color-heading: var(--color-wine-900);
+  --color-accent: var(--color-wine-700);
+  --color-accent-hover: var(--color-wine-500);
+  --color-accent-soft: var(--color-wine-100);
+  --color-on-accent: var(--color-cream-50);
+  --color-focus: var(--color-wine-500);
+
+  /* The dominant red surface. Red is the primary colour and cream the
+     secondary one: the panel carries the brand, the progress and the
+     question, and the cream area carries the answer. */
+  --color-panel: var(--color-wine-700);
+  --color-on-panel: var(--color-cream-50); /* 9.3:1 on the panel — AAA */
+  --color-panel-muted: var(--color-wine-100); /* 7.5:1 — AAA at every size */
+  /* El vino sobre el panel da 1,5:1: invisible. La barra de progreso usa oro
+     (3,8:1, suficiente para objeto gráfico) y el vino se queda en la crema. */
+  --color-panel-track: rgba(252, 248, 240, 0.16);
+  /* Blanco, no oro: 9,29:1 sobre el granate y sin meter un segundo blanco. */
+  --color-panel-fill: var(--color-on-panel);
+  --color-panel-border: var(--color-wine-900);
+  --color-panel-rule: rgba(195, 154, 75, 0.42);
+
+  /* ─── Type ───────────────────────────────────────────────────────────── */
+  --font-display: 'Spectral', Georgia, 'Times New Roman', serif;
+  --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.1875rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.6875rem;
+  --text-3xl: 2.125rem;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.55;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* ─── Space ──────────────────────────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3.5rem;
+
+  /* ─── Radius, border, shadow ─────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  --border-hairline: 1px;
+  --border-thick: 2px;
+
+  /* Two shadows only, both restrained. */
+  --shadow-raised: 0 1px 2px rgb(58 42 46 / 0.05), 0 2px 6px rgb(58 42 46 / 0.04);
+  --shadow-selected: 0 2px 4px rgb(123 33 64 / 0.1), 0 8px 20px rgb(123 33 64 / 0.1);
+  --shadow-button: 0 1px 2px rgb(100 25 51 / 0.24), 0 6px 16px rgb(100 25 51 / 0.22);
+  --shadow-overlay: 0 6px 24px rgb(58 42 46 / 0.14);
+
+  /* ─── Layout ─────────────────────────────────────────────────────────── */
+  --measure: 34rem;
+  --measure-wide: 64rem;
+  --tap-target: 44px;
+
+  /* ─── Motion ─────────────────────────────────────────────────────────── */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
+}

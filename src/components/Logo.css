@@ -1,0 +1,29 @@
+.logo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45em;
+  font-family: var(--font-display);
+  color: var(--color-heading);
+  line-height: 1;
+}
+
+.logo__prefix {
+  font-family: var(--font-body);
+  font-size: 0.72em;
+  letter-spacing: 0.2em;
+  font-weight: var(--weight-semibold);
+  color: var(--color-gold);
+}
+
+.logo__name {
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+}
+
+.logo--sm { font-size: var(--text-base); }
+.logo--md { font-size: var(--text-lg); }
+.logo--lg { font-size: var(--text-2xl); }
+
+img.logo--sm { block-size: 1.75rem; inline-size: auto; }
+img.logo--md { block-size: 2.25rem; inline-size: auto; }
+img.logo--lg { block-size: 3.25rem; inline-size: auto; }
