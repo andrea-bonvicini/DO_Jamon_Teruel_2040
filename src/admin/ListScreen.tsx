@@ -4,25 +4,35 @@ import { Screen } from '../components/Screen'
 import { StatusMessage } from '../components/StatusMessage'
 import { STRINGS, format } from '../data/strings'
 import { exportUrl, logoutAdmin } from '../network/adminApi'
-import type { AdminFilters, AdminListRow } from '../network/adminApi'
+import type { AdminCounts, AdminFilters, AdminListRow } from '../network/adminApi'
 import type { AudienceId } from '../data/types'
 
 interface ListScreenProps {
   rows: AdminListRow[]
+  counts: AdminCounts
+  audience: AudienceId
   filters: AdminFilters
   loading: boolean
   error: string | null
-  onFiltersChange: (filters: AdminFilters) => void
+  onAudienceChange: (audience: AudienceId) => void
   onApply: (filters: AdminFilters) => void
   onSelect: (id: string) => void
   onLoggedOut: () => void
 }
 
+const TABS: Array<{ id: AudienceId; label: string }> = [
+  { id: 'company', label: STRINGS.admin.tabCompany },
+  { id: 'individual', label: STRINGS.admin.tabIndividual },
+]
+
 export function ListScreen({
   rows,
+  counts,
+  audience,
   filters,
   loading,
   error,
+  onAudienceChange,
   onApply,
   onSelect,
   onLoggedOut,
@@ -30,27 +40,53 @@ export function ListScreen({
   // Draft filters: applied on submit, never debounced-on-type.
   const [draft, setDraft] = useState<AdminFilters>(filters)
 
+  // Companies give their name; consumers are anonymous by design, so a search
+  // box on that tab could never match anything.
+  const searchable = audience === 'company'
+  // The export always carries the tab, so you download what you are looking at.
+  const exportFilters: AdminFilters = { ...filters, type: audience }
+
   return (
     <Screen
       title={STRINGS.admin.title}
       width="wide"
       subtitle={
-        <span className="admin__toolbar">
-          <a className="admin__link" href={exportUrl('wide', filters)}>
-            {STRINGS.admin.exportWide}
-          </a>
-          <a className="admin__link" href={exportUrl('long', filters)}>
-            {STRINGS.admin.exportLong}
-          </a>
-          <Button
-            variant="quiet"
-            onClick={() => {
-              void logoutAdmin().finally(onLoggedOut)
-            }}
-          >
-            {STRINGS.admin.logout}
-          </Button>
-        </span>
+        <>
+          {/* Two choices, so `aria-current` rather than the full ARIA tabs
+              pattern: that needs tabpanels and arrow-key navigation, and half
+              of it would be worse than none. */}
+          <nav className="admin__tabs" aria-label={STRINGS.admin.tabsLabel}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className="admin__tab"
+                aria-current={tab.id === audience ? 'page' : undefined}
+                onClick={() => tab.id !== audience && onAudienceChange(tab.id)}
+              >
+                {tab.label}
+                <span className="admin__tab-count">{counts[tab.id]}</span>
+              </button>
+            ))}
+          </nav>
+
+          <span className="admin__toolbar">
+            <a className="admin__link" href={exportUrl('wide', exportFilters)}>
+              {STRINGS.admin.exportWide}
+            </a>
+            <a className="admin__link" href={exportUrl('long', exportFilters)}>
+              {STRINGS.admin.exportLong}
+            </a>
+            <Button
+              variant="quiet"
+              onClick={() => {
+                void logoutAdmin().finally(onLoggedOut)
+              }}
+            >
+              {STRINGS.admin.logout}
+            </Button>
+          </span>
+        </>
       }
     >
       <form
@@ -60,30 +96,17 @@ export function ListScreen({
           onApply(draft)
         }}
       >
-        <label className="admin__filter">
-          <span>{STRINGS.admin.search}</span>
-          <input
-            className="admin__input"
-            type="search"
-            value={draft.search ?? ''}
-            onChange={(event) => setDraft({ ...draft, search: event.target.value })}
-          />
-        </label>
-
-        <label className="admin__filter">
-          <span>{STRINGS.admin.type}</span>
-          <select
-            className="admin__input"
-            value={draft.type ?? ''}
-            onChange={(event) =>
-              setDraft({ ...draft, type: event.target.value as AudienceId | '' })
-            }
-          >
-            <option value="">{STRINGS.admin.all}</option>
-            <option value="company">{STRINGS.admin.company}</option>
-            <option value="individual">{STRINGS.admin.individual}</option>
-          </select>
-        </label>
+        {searchable && (
+          <label className="admin__filter">
+            <span>{STRINGS.admin.search}</span>
+            <input
+              className="admin__input"
+              type="search"
+              value={draft.search ?? ''}
+              onChange={(event) => setDraft({ ...draft, search: event.target.value })}
+            />
+          </label>
+        )}
 
         <label className="admin__filter">
           <span>{STRINGS.admin.direction}</span>
@@ -110,7 +133,9 @@ export function ListScreen({
           the rows you get in the CSV. */}
       {!loading && rows.length > 0 && (
         <p className="admin__count">
-          {rows.length === 1 ? STRINGS.admin.countOne : format(STRINGS.admin.count, { count: rows.length })}
+          {rows.length === 1
+            ? STRINGS.admin.countOne
+            : format(STRINGS.admin.count, { count: rows.length })}
         </p>
       )}
 
@@ -124,8 +149,7 @@ export function ListScreen({
             <thead>
               <tr>
                 <th scope="col">{STRINGS.admin.colDate}</th>
-                <th scope="col">{STRINGS.admin.colType}</th>
-                <th scope="col">{STRINGS.admin.colIdentification}</th>
+                {searchable && <th scope="col">{STRINGS.admin.colCompanyName}</th>}
                 <th scope="col">{STRINGS.admin.colVersion}</th>
                 <th scope="col">{STRINGS.admin.colAnswers}</th>
               </tr>
@@ -146,8 +170,7 @@ export function ListScreen({
                   }}
                 >
                   <td>{formatDate(row.created_at)}</td>
-                  <td>{audienceLabel(row.respondent_type)}</td>
-                  <td>{summarise(row.identification)}</td>
+                  {searchable && <td>{summarise(row.identification)}</td>}
                   <td>{row.questionnaire_version}</td>
                   <td>{Object.keys(row.answers ?? {}).length}</td>
                 </tr>
@@ -170,7 +193,7 @@ export function formatDate(iso: string): string {
   return date.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
 }
 
-/** Companies show their name here; consumers are anonymous, so it is empty. */
+/** Companies show their name here; consumers never reach this column. */
 function summarise(identification: Record<string, string | number>): string {
   const values = Object.values(identification ?? {}).filter((value) => String(value).trim() !== '')
   return values.length ? values.join(' · ') : STRINGS.admin.anonymous

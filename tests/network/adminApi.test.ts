@@ -98,13 +98,13 @@ describe('adminApi', () => {
   })
 
   it('omits empty filters from the list query string', async () => {
-    const mock = stubFetch({ jsonBody: { responses: [] } })
+    const mock = stubFetch({ jsonBody: { responses: [], counts: { company: 0, individual: 0 } } })
     await listResponsesAdmin({ search: '   ', type: '', direction: undefined })
     expect(mock).toHaveBeenCalledWith('/api/admin/responses', undefined)
   })
 
   it('includes the filters it is given', async () => {
-    const mock = stubFetch({ jsonBody: { responses: [] } })
+    const mock = stubFetch({ jsonBody: { responses: [], counts: { company: 0, individual: 0 } } })
     await listResponsesAdmin({ search: 'teruel', type: 'company', direction: 'asc' })
     expect(mock).toHaveBeenCalledWith(
       '/api/admin/responses?search=teruel&type=company&direction=asc',
@@ -118,9 +118,15 @@ describe('adminApi', () => {
     expect(mock).toHaveBeenCalledWith('/api/admin/response?id=a%20b%2Fc', undefined)
   })
 
-  it('unwraps the responses array', async () => {
-    stubFetch({ jsonBody: { responses: [{ id: '1' }, { id: '2' }] } })
-    expect(await listResponsesAdmin({})).toHaveLength(2)
+  it('returns the rows together with the real totals', async () => {
+    stubFetch({
+      jsonBody: { responses: [{ id: '1' }, { id: '2' }], counts: { company: 500, individual: 87 } },
+    })
+    const result = await listResponsesAdmin({})
+
+    expect(result.responses).toHaveLength(2)
+    // The totals come from the server precisely because the rows are capped.
+    expect(result.counts).toEqual({ company: 500, individual: 87 })
   })
 })
 

@@ -18,6 +18,14 @@ export interface AdminResponse extends AdminListRow {
   open_answer: string | null
 }
 
+/** Real totals per audience, independent of the search box and the row cap. */
+export type AdminCounts = Record<AudienceId, number>
+
+export interface AdminListResult {
+  responses: AdminListRow[]
+  counts: AdminCounts
+}
+
 export interface AdminFilters {
   search?: string
   type?: AudienceId | ''
@@ -48,11 +56,8 @@ export function logoutAdmin(): Promise<{ ok: true }> {
   return request('/api/admin/logout', { method: 'POST' })
 }
 
-export async function listResponsesAdmin(filters: AdminFilters): Promise<AdminListRow[]> {
-  const body = await request<{ responses: AdminListRow[] }>(
-    `/api/admin/responses${queryString(filters)}`,
-  )
-  return body.responses
+export async function listResponsesAdmin(filters: AdminFilters): Promise<AdminListResult> {
+  return request<AdminListResult>(`/api/admin/responses${queryString(filters)}`)
 }
 
 export async function getResponseAdmin(id: string): Promise<AdminResponse> {

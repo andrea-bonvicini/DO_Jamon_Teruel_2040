@@ -456,3 +456,54 @@ Cambiada a la elegida por el responsable del proyecto. **Reserva planteada**: el
 `server/auth.ts` justifica usar SHA-256 plano precisamente porque la contraseña era larga y
 aleatoria. Una contraseña corta y con estructura reconocible debilita ese razonamiento, y el
 limitador de peticiones apenas protege en serverless, donde se reinicia en cada instancia fría.
+
+## 2026-09-24 — El panel se parte en dos pestañas, una por cuestionario
+
+Son dos encuestas con preguntas distintas. Verlas en una sola tabla obligaba a acordarse de poner
+el desplegable «Tipo», dejaba la columna de identificación repitiendo «Anónima» en todas las filas
+de consumidor, y —lo que de verdad importa— permitía descargarse el CSV con las dos poblaciones
+mezcladas sin darse cuenta.
+
+**Se separa la vista, no el almacenamiento.** Una sola tabla en Supabase: `respondent_type` está
+indexada y cada fila lleva su propio snapshot, así que nunca hay ambigüedad sobre a qué
+cuestionario pertenece. Dos tablas obligarían a duplicar repositorio, validación y las dos
+exportaciones, a mantener dos esquemas sincronizados en cada cambio de contenido y a migrar lo ya
+recogido, sin ganar nada; y además impedirían comparar los dos grupos, que es justo lo que se va a
+querer hacer en el análisis.
+
+### Los recuentos vienen del servidor, y no es un detalle
+
+El listado está limitado a 200 filas. Contar las filas recibidas daría un número correcto hoy y
+mentiroso en cuanto un cuestionario pase de 200: la pestaña diría «200» habiendo 500. Un recuento
+que miente es peor que no tener recuento. Por eso `countResponsesByAudience` hace dos consultas
+`{ count: 'exact', head: true }` —baratas, la columna está indexada y no traen filas— y
+`/api/admin/responses` devuelve `{ responses, counts }`. Hay un test que fija exactamente este
+caso: 200 filas devueltas, total 500, la pestaña debe decir 500.
+
+El número de la pestaña responde a «cuántas hay», ajeno al buscador. Para «cuántas estoy viendo»
+ya está la línea de recuento bajo el formulario.
+
+### Detalles de la interfaz
+
+- **`aria-current`, no el patrón ARIA de pestañas.** Implementarlo de verdad exige `tabpanel` y
+  navegación con flechas; a medias sería peor que no usarlo. Con dos vistas, `aria-current="page"`
+  dice exactamente lo que hace falta.
+- **Los enlaces de exportación cuelgan de la pestaña activa**, así que siempre se descarga lo que
+  se está mirando. Ahí es donde se cierra el fallo que motivó el cambio.
+- **El buscador solo aparece en empresas.** Busca sobre el blob de identificación, vacío por diseño
+  en consumidores: una caja que no puede encontrar nada nunca es peor que ninguna caja. Al cambiar
+  de pestaña se limpia en vez de filtrar en silencio.
+- **Columnas por público**: Fecha · Empresa · Versión · Respuestas en empresas; sin la columna de
+  identificación en consumidores. Desaparece también la columna «Tipo»: dentro de una pestaña todas
+  las filas son del mismo tipo.
+
+### Comprobado
+
+287 tests, `typecheck`, `lint`, `build` y el detector de diseño (0 hallazgos sobre `src/`). Con las
+tres respuestas de ejemplo: las pestañas marcan 2 y 1 y cambiar de pestaña recarga. A 390 px medido
+en el DOM, no en la captura: `scrollWidth` del documento = 390, las pestañas caben en una línea
+(342 px) y la tabla hace su propio scroll dentro de `.admin__table-wrap`. La primera captura
+parecía desbordarse, pero era el recorte de la ventana del navegador.
+
+Queda comprobar en producción que los recuentos coinciden con Supabase y que cada CSV trae solo su
+público.

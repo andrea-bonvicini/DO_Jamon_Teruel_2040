@@ -159,6 +159,10 @@ export async function handleDevApi(
 
   // ── GET /api/admin/responses ───────────────────────────────────────────
   if (path === '/api/admin/responses') {
+    const counts = {
+      company: store.filter((row) => row.respondent_type === 'company').length,
+      individual: store.filter((row) => row.respondent_type === 'individual').length,
+    }
     const rows = selectRows(apiRequest, 200).map((row) => ({
       id: row.id,
       created_at: row.created_at,
@@ -167,7 +171,7 @@ export async function handleDevApi(
       questionnaire_version: row.questionnaire_version,
       answers: row.answers,
     }))
-    return json(res, 200, { responses: rows }), true
+    return json(res, 200, { responses: rows, counts }), true
   }
 
   // ── GET /api/admin/response?id= ────────────────────────────────────────

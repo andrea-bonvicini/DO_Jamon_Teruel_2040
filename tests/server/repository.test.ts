@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   buildQuery,
+  countResponsesByAudience,
   getResponse,
   insertResponse,
   listResponses,
@@ -243,5 +244,42 @@ describe('parseListFilters', () => {
   it('takes the first value of a repeated parameter', () => {
     const filters = parseListFilters({ headers: {}, query: { type: ['individual', 'company'] } })
     expect(filters.respondentType).toBe('individual')
+  })
+})
+
+describe('countResponsesByAudience', () => {
+  it('asks Postgres for the count without shipping any row', async () => {
+    const { client, calls } = fakeClient({ data: [] })
+    await countResponsesByAudience(client)
+
+    const selects = calls.filter((call) => call.method === 'select')
+    expect(selects).toHaveLength(2)
+    for (const call of selects) {
+      expect(call.args[1]).toEqual({ count: 'exact', head: true })
+    }
+  })
+
+  it('counts each audience separately', async () => {
+    const { client, calls } = fakeClient({ data: [] })
+    await countResponsesByAudience(client)
+
+    const filtered = calls.filter((call) => call.method === 'eq').map((call) => call.args)
+    expect(filtered).toEqual([
+      ['respondent_type', 'company'],
+      ['respondent_type', 'individual'],
+    ])
+  })
+
+  it('reads zero rather than undefined when a questionnaire has none', async () => {
+    const { client } = fakeClient({ data: [] })
+    // The stub returns no `count`, which is what an empty table looks like.
+    expect(await countResponsesByAudience(client)).toEqual({ company: 0, individual: 0 })
+  })
+
+  it('throws a readable error when the count fails', async () => {
+    const { client } = fakeClient({ error: { message: 'timeout' } })
+    await expect(countResponsesByAudience(client)).rejects.toThrow(
+      'Could not count the responses: timeout',
+    )
   })
 })

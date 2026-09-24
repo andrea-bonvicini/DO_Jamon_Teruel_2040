@@ -20,12 +20,14 @@ const insertResponse = vi.hoisted(() => vi.fn())
 const listResponses = vi.hoisted(() => vi.fn())
 const getResponse = vi.hoisted(() => vi.fn())
 const listResponsesForExport = vi.hoisted(() => vi.fn())
+const countResponsesByAudience = vi.hoisted(() => vi.fn())
 
 vi.mock('../../server/responsesRepository', () => ({
   insertResponse,
   listResponses,
   getResponse,
   listResponsesForExport,
+  countResponsesByAudience,
 }))
 
 const { resetRateLimit } = await import('../../server/rateLimit')
@@ -139,6 +141,7 @@ beforeEach(() => {
   listResponses.mockReset().mockResolvedValue([])
   getResponse.mockReset().mockResolvedValue(null)
   listResponsesForExport.mockReset().mockResolvedValue([])
+  countResponsesByAudience.mockReset().mockResolvedValue({ company: 0, individual: 0 })
 })
 
 describe('POST /api/responses', () => {
@@ -272,6 +275,15 @@ describe('GET /api/admin/responses', () => {
 
     expect(captured.statusCode).toBe(200)
     expect((captured.body as { responses: unknown[] }).responses).toHaveLength(1)
+  })
+
+  it('carries the real per-audience totals, for the panel tabs', async () => {
+    countResponsesByAudience.mockResolvedValueOnce({ company: 500, individual: 87 })
+    const { res, captured } = mockResponse()
+    await getResponsesList(authed(), res)
+
+    // Not the number of rows returned: the list is capped at 200.
+    expect((captured.body as { counts: unknown }).counts).toEqual({ company: 500, individual: 87 })
   })
 
   it('passes the query filters through to the repository', async () => {

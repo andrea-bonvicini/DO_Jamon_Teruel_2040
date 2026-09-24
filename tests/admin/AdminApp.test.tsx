@@ -41,6 +41,11 @@ function ok(body: unknown) {
   return { ok: true, status: 200, json: async () => body }
 }
 
+/** The list endpoint answers with the rows AND the real per-audience totals. */
+function list(rows: unknown[], counts = { company: 2, individual: 1 }) {
+  return ok({ responses: rows, counts })
+}
+
 function unauthorised() {
   return { ok: false, status: 401, json: async () => ({ error: 'Invalid session.' }) }
 }
@@ -60,7 +65,7 @@ describe('the admin panel', () => {
       .fn()
       .mockResolvedValueOnce(unauthorised()) // initial session check
       .mockResolvedValueOnce(ok({ ok: true })) // login
-      .mockResolvedValueOnce(ok({ responses: [listRow] })) // list after login
+      .mockResolvedValueOnce(list([listRow])) // list after login
       .mockResolvedValueOnce(ok({ response: detail })) // detail
     globalThis.fetch = fetchMock as unknown as typeof fetch
 
@@ -74,7 +79,7 @@ describe('the admin panel', () => {
     await user.click(screen.getByRole('button', { name: STRINGS.admin.login }))
 
     // The list.
-    const row = await screen.findByRole('button', { name: /Empresa/ })
+    const row = await screen.findByRole('button', { name: /Secaderos/ })
     expect(screen.getByText('Secaderos de Teruel S.L.')).toBeInTheDocument()
 
     // The detail, rendered from the snapshot.
@@ -87,7 +92,7 @@ describe('the admin panel', () => {
     expect(screen.queryByText('secadero')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: STRINGS.admin.back }))
-    expect(await screen.findByRole('button', { name: /Empresa/ })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Secaderos/ })).toBeInTheDocument()
   })
 
   it('reports a wrong password without claiming a server error', async () => {
@@ -124,7 +129,7 @@ describe('the admin panel', () => {
   it('shows the company name in the list, and "Anónima" for a consumer', async () => {
     globalThis.fetch = vi
       .fn()
-      .mockResolvedValue(ok({ responses: [listRow, anonymousRow] })) as unknown as typeof fetch
+      .mockResolvedValue(list([listRow, anonymousRow])) as unknown as typeof fetch
 
     render(<AdminApp />)
 
@@ -136,14 +141,14 @@ describe('the admin panel', () => {
   it('names the company in the detail view', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(ok({ responses: [listRow] }))
+      .mockResolvedValueOnce(list([listRow]))
       .mockResolvedValueOnce(ok({ response: detail }))
     globalThis.fetch = fetchMock as unknown as typeof fetch
 
     const user = userEvent.setup()
     render(<AdminApp />)
 
-    await user.click(await screen.findByRole('button', { name: /Empresa/ }))
+    await user.click(await screen.findByRole('button', { name: /Secaderos/ }))
     expect(await screen.findByText('companyName')).toBeInTheDocument()
     expect(screen.getAllByText('Secaderos de Teruel S.L.').length).toBeGreaterThan(0)
   })
@@ -151,14 +156,14 @@ describe('the admin panel', () => {
   it('applies the filters only on submit, and carries them into the export links', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(ok({ responses: [listRow] }))
-      .mockResolvedValueOnce(ok({ responses: [] }))
+      .mockResolvedValueOnce(list([listRow]))
+      .mockResolvedValueOnce(list([]))
     globalThis.fetch = fetchMock as unknown as typeof fetch
 
     const user = userEvent.setup()
     render(<AdminApp />)
 
-    await screen.findByRole('button', { name: /Empresa/ })
+    await screen.findByRole('button', { name: /Secaderos/ })
     expect(fetchMock).toHaveBeenCalledTimes(1)
 
     await user.type(screen.getByLabelText(STRINGS.admin.search), 'teruel')
@@ -167,26 +172,26 @@ describe('the admin panel', () => {
 
     await user.click(screen.getByRole('button', { name: STRINGS.admin.apply }))
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/admin/responses?search=teruel&direction=desc')
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/admin/responses?search=teruel&type=company&direction=desc')
 
     expect(await screen.findByText(STRINGS.admin.empty)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: STRINGS.admin.exportWide })).toHaveAttribute(
       'href',
-      '/api/admin/export?format=wide&search=teruel&direction=desc',
+      '/api/admin/export?format=wide&search=teruel&type=company&direction=desc',
     )
   })
 
   it('logs out and returns to the login screen', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(ok({ responses: [listRow] }))
+      .mockResolvedValueOnce(list([listRow]))
       .mockResolvedValueOnce(ok({ ok: true }))
     globalThis.fetch = fetchMock as unknown as typeof fetch
 
     const user = userEvent.setup()
     render(<AdminApp />)
 
-    await screen.findByRole('button', { name: /Empresa/ })
+    await screen.findByRole('button', { name: /Secaderos/ })
     await user.click(screen.getByRole('button', { name: STRINGS.admin.logout }))
 
     expect(await screen.findByRole('button', { name: STRINGS.admin.login })).toBeInTheDocument()
@@ -196,14 +201,14 @@ describe('the admin panel', () => {
   it('activates a row with the keyboard', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(ok({ responses: [listRow] }))
+      .mockResolvedValueOnce(list([listRow]))
       .mockResolvedValueOnce(ok({ response: detail }))
     globalThis.fetch = fetchMock as unknown as typeof fetch
 
     const user = userEvent.setup()
     render(<AdminApp />)
 
-    const row = await screen.findByRole('button', { name: /Empresa/ })
+    const row = await screen.findByRole('button', { name: /Secaderos/ })
     row.focus()
     await user.keyboard('{Enter}')
 
@@ -229,14 +234,124 @@ describe('the admin panel', () => {
 
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(ok({ responses: [priced] }))
+      .mockResolvedValueOnce(list([], { company: 0, individual: 1 }))
+      .mockResolvedValueOnce(list([priced], { company: 0, individual: 1 }))
       .mockResolvedValueOnce(ok({ response: priced }))
     globalThis.fetch = fetchMock as unknown as typeof fetch
 
     const user = userEvent.setup()
     render(<AdminApp />)
 
-    await user.click(await screen.findByRole('button', { name: /Consumidor/ }))
+    // El precio es de un consumidor: hay que ir a su pestaña.
+    await user.click(await screen.findByRole('button', { name: /Consumidores/ }))
+    await user.click(await screen.findByRole('button', { name: /individual@/ }))
     expect(await screen.findByText('9 €/kg')).toBeInTheDocument()
+  })
+
+  it('starts on the company tab and marks it as current', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(list([listRow])) as unknown as typeof fetch
+    render(<AdminApp />)
+
+    const empresas = await screen.findByRole('button', { name: /Empresas/ })
+    expect(empresas).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: /Consumidores/ })).not.toHaveAttribute('aria-current')
+  })
+
+  it('reloads with the other audience when the tab changes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(list([listRow]))
+      .mockResolvedValueOnce(list([anonymousRow]))
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    const user = userEvent.setup()
+    render(<AdminApp />)
+
+    await screen.findByRole('button', { name: /Secaderos/ })
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('type=company')
+
+    await user.click(screen.getByRole('button', { name: /Consumidores/ }))
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('type=individual')
+  })
+
+  it('exports the tab you are looking at, never both populations at once', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(list([listRow]))
+      .mockResolvedValueOnce(list([anonymousRow]))
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    const user = userEvent.setup()
+    render(<AdminApp />)
+
+    await screen.findByRole('button', { name: /Secaderos/ })
+    expect(screen.getByRole('link', { name: STRINGS.admin.exportWide })).toHaveAttribute(
+      'href',
+      expect.stringContaining('type=company'),
+    )
+
+    await user.click(screen.getByRole('button', { name: /Consumidores/ }))
+    expect(screen.getByRole('link', { name: STRINGS.admin.exportWide })).toHaveAttribute(
+      'href',
+      expect.stringContaining('type=individual'),
+    )
+  })
+
+  /**
+   * The whole reason the totals come from the server. Counting the rows that
+   * arrived would read correctly until a questionnaire passes the 200-row cap,
+   * and then quietly say 200 when there are 500.
+   */
+  it('shows the real total on the tab, not the number of rows loaded', async () => {
+    const twoHundred = Array.from({ length: 200 }, (_, i) => ({ ...listRow, id: `row-${i}` }))
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(list(twoHundred, { company: 500, individual: 87 })) as unknown as typeof fetch
+
+    render(<AdminApp />)
+
+    const empresas = await screen.findByRole('button', { name: /Empresas/ })
+    expect(empresas).toHaveTextContent('500')
+    expect(empresas).not.toHaveTextContent('200')
+    expect(screen.getByRole('button', { name: /Consumidores/ })).toHaveTextContent('87')
+  })
+
+  it('drops the identification column on the anonymous tab', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(list([listRow]))
+      .mockResolvedValueOnce(list([anonymousRow]))
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    const user = userEvent.setup()
+    render(<AdminApp />)
+
+    await screen.findByRole('button', { name: /Secaderos/ })
+    expect(screen.getByRole('columnheader', { name: STRINGS.admin.colCompanyName })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Consumidores/ }))
+    // A column of "Anónima" repeated on every row told you nothing.
+    expect(
+      screen.queryByRole('columnheader', { name: STRINGS.admin.colCompanyName }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText(STRINGS.admin.anonymous)).not.toBeInTheDocument()
+  })
+
+  it('hides the search box where it could never match anything', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(list([listRow]))
+      .mockResolvedValueOnce(list([anonymousRow]))
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    const user = userEvent.setup()
+    render(<AdminApp />)
+
+    await screen.findByRole('button', { name: /Secaderos/ })
+    expect(screen.getByLabelText(STRINGS.admin.search)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Consumidores/ }))
+    // Consumers store nothing to search: the box would be a dead end.
+    expect(screen.queryByLabelText(STRINGS.admin.search)).not.toBeInTheDocument()
   })
 })

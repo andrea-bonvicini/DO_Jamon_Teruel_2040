@@ -181,3 +181,53 @@
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* ─── Las dos pestañas ───────────────────────────────────────────────────
+   Viven en la banda granate, así que heredan sus tokens invertidos. */
+.admin__tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-block-end: var(--space-4);
+}
+
+.admin__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.5rem;
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  color: var(--color-text-muted);
+  border: var(--border-hairline) solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease);
+}
+
+.admin__tab:hover {
+  color: var(--color-on-panel);
+  border-color: var(--color-panel-muted);
+}
+
+.admin__tab[aria-current='page'] {
+  background: var(--color-page);
+  border-color: var(--color-page);
+  color: var(--color-wine-900);
+}
+
+.admin__tab-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+  opacity: 0.75;
+}
+
+@media (max-width: 30rem) {
+  .admin__tabs {
+    flex-wrap: wrap;
+  }
+}
