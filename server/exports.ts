@@ -6,6 +6,7 @@ import type { ResponseRow } from './responsesRepository.js'
 import { toCsv } from './csv.js'
 import {
   buildSpine,
+  countOffers,
   dates,
   formatNumber,
   identificationColumns,
@@ -15,6 +16,7 @@ import {
   questionKey,
   renderChoiceTexts,
   scaleRowEntries,
+  segmentsOf,
   wasAskedOpenQuestion,
 } from './exportModel.js'
 import type { SpineQuestion } from './exportModel.js'
@@ -50,6 +52,10 @@ interface MatrixColumn {
   header: string
   /** The question it belongs to, for the disambiguation pass. */
   questionId: string
+  /** Its spine entry, so the codebook can describe it without a second lookup. */
+  spineKey: string
+  /** Holds raw ids no snapshot explains, rather than an answer of its own. */
+  overflow?: boolean
 }
 
 /**
@@ -65,8 +71,14 @@ function matrixColumns(spine: SpineQuestion[], overflow: Set<string>): MatrixCol
   const columns: MatrixColumn[] = []
 
   for (const question of spine) {
-    const at = (suffix: string, header: string) =>
-      columns.push({ key: `${question.key}${SEPARATOR}${suffix}`, header, questionId: question.id })
+    const at = (suffix: string, header: string, isOverflow = false) =>
+      columns.push({
+        key: `${question.key}${SEPARATOR}${suffix}`,
+        header,
+        questionId: question.id,
+        spineKey: question.key,
+        ...(isOverflow ? { overflow: true } : {}),
+      })
 
     if (question.type === 'multi_choice' && question.options.length > 0) {
       for (const option of question.options) {
@@ -81,15 +93,21 @@ function matrixColumns(spine: SpineQuestion[], overflow: Set<string>): MatrixCol
         key: question.key,
         header: format(E.withUnit, { label: question.label, unit: question.unit }),
         questionId: question.id,
+        spineKey: question.key,
       })
     } else {
-      columns.push({ key: question.key, header: question.label, questionId: question.id })
+      columns.push({
+        key: question.key,
+        header: question.label,
+        questionId: question.id,
+        spineKey: question.key,
+      })
     }
 
     // Only when something actually landed there, so the ordinary export is
     // not carrying an empty column for a case that never happened.
     if (overflow.has(question.key)) {
-      at('', format(E.overflow, { label: question.label }))
+      at('', format(E.overflow, { label: question.label }), true)
     }
   }
 
@@ -266,11 +284,17 @@ export function buildMatrixCsv(rows: ResponseRow[]): string {
   return toCsv(headers, body)
 }
 
-export type ExportFormat = 'matrix' | 'frequency'
+export type ExportFormat = 'matrix' | 'frequency' | 'codebook'
+
+const FILE_STEM: Record<ExportFormat, string> = {
+  matrix: E.fileMatrix,
+  frequency: E.fileFrequency,
+  codebook: E.fileCodebook,
+}
 
 /** `respuestas-empresas.csv`: the file says whose answers it holds. */
 export function exportFilename(shape: ExportFormat, audience: string | null): string {
-  const what = shape === 'matrix' ? E.fileMatrix : E.fileFrequency
+  const what = FILE_STEM[shape]
   const who =
     audience === 'company'
       ? E.fileCompany
@@ -285,7 +309,6 @@ function audienceLabel(audience: string): string {
   if (audience === 'individual') return STRINGS.admin.individual
   return audience
 }
-
 // ─── The frequency table ────────────────────────────────────────────────────
 
 interface Tally {
@@ -384,45 +407,35 @@ function percent(count: number, denominator: number): string {
 }
 
 /**
- * One line per question and option, with the counts.
+ * One block of the frequency table: every question and option counted over
+ * ONE set of respondents — all of them, or one subgroup.
  *
- * Note for whoever reads the file: on a multiple-choice question the
- * percentages add up to more than 100, because one person can pick several
- * options. That is not a rounding error.
+ * `skipKey` is the question the subgroup was cut by, left out of its own
+ * block: «of the mataderos, 100 % are mataderos» is noise.
  */
-export function buildFrequencyCsv(rows: ResponseRow[]): string {
-  const spine = buildSpine(rows)
+function frequencyBlock(
+  body: Array<Array<unknown>>,
+  spine: SpineQuestion[],
+  rows: ResponseRow[],
+  segment: string,
+  group: string,
+  skipKey: string | null,
+): void {
+  const offers = countOffers(rows, spine)
   const tallies = tallyAll(rows, spine)
 
-  const headers = [
-    E.audience,
-    E.section,
-    E.question,
-    E.statement,
-    E.row,
-    E.kind,
-    E.option,
-    E.answers,
-    E.offered,
-    E.answered,
-    E.value,
-    E.percent,
-    E.unresolved,
-  ]
-
-  const body: Array<Array<unknown>> = []
-
   for (const question of spine) {
+    if (question.key === skipKey) continue
     const tally = tallies.get(question.key) ?? emptyTally()
-    // Two columns, because one cannot do both jobs. `label` identifies the
-    // question — a rating grid's `text` is «Valore de 1 a 5…», which names
-    // nothing — and `text` is the exact wording, which is what you need to
-    // interpret the numbers. The unit rides the label, so €/kg and €/pieza
-    // stay distinguishable at a glance.
+    const asked = offers.asked.get(question.key) ?? 0
     const head = [
+      segment,
+      group,
       audienceLabel(question.audience),
       question.sectionName,
-      question.unit ? format(E.withUnit, { label: question.label, unit: question.unit }) : question.label,
+      question.unit
+        ? format(E.withUnit, { label: question.label, unit: question.unit })
+        : question.label,
       question.text,
     ]
 
@@ -430,7 +443,7 @@ export function buildFrequencyCsv(rows: ResponseRow[]): string {
       rowText: string,
       kind: string,
       option: string,
-      count: number | '',
+      count: number,
       offered: number | '',
       value: string,
       pct: string,
@@ -456,15 +469,8 @@ export function buildFrequencyCsv(rows: ResponseRow[]): string {
         const kind = question.type === 'multi_choice' ? E.kindMultiOption : E.kindOption
         for (const option of question.options) {
           const count = tally.options.get(option.id) ?? 0
-          line(
-            '',
-            kind,
-            option.text,
-            count,
-            option.offered,
-            '',
-            percent(count, tally.answered),
-          )
+          const offered = offers.option.get(`${question.key}\u0000${option.id}`) ?? 0
+          line('', kind, option.text, count, offered, '', percent(count, tally.answered))
         }
         break
       }
@@ -473,10 +479,18 @@ export function buildFrequencyCsv(rows: ResponseRow[]): string {
         const { min, max } = question.scale ?? { min: 1, max: 5 }
         for (let point = min; point <= max; point += 1) {
           const count = tally.values.filter((value) => value === point).length
-          line('', E.kindScalePoint, String(point), count, question.asked, '', percent(count, tally.answered))
+          line('', E.kindScalePoint, String(point), count, asked, '', percent(count, tally.answered))
         }
         if (tally.values.length > 0) {
-          line('', E.kindStatistic, E.statMean, tally.values.length, question.asked, formatNumber(mean(tally.values), 2), '')
+          line(
+            '',
+            E.kindStatistic,
+            E.statMean,
+            tally.values.length,
+            asked,
+            formatNumber(mean(tally.values), 2),
+            '',
+          )
         }
         break
       }
@@ -485,12 +499,29 @@ export function buildFrequencyCsv(rows: ResponseRow[]): string {
         const { min, max } = question.scale ?? { min: 1, max: 5 }
         for (const gridRow of question.rows) {
           const values = tally.rows.get(gridRow.id) ?? []
+          const offered = offers.row.get(`${question.key}\u0000${gridRow.id}`) ?? 0
           for (let point = min; point <= max; point += 1) {
             const count = values.filter((value) => value === point).length
-            line(gridRow.text, E.kindScalePoint, String(point), count, gridRow.offered, '', percent(count, values.length))
+            line(
+              gridRow.text,
+              E.kindScalePoint,
+              String(point),
+              count,
+              offered,
+              '',
+              percent(count, values.length),
+            )
           }
           if (values.length > 0) {
-            line(gridRow.text, E.kindStatistic, E.statMean, values.length, gridRow.offered, formatNumber(mean(values), 2), '')
+            line(
+              gridRow.text,
+              E.kindStatistic,
+              E.statMean,
+              values.length,
+              offered,
+              formatNumber(mean(values), 2),
+              '',
+            )
           }
         }
         break
@@ -498,7 +529,7 @@ export function buildFrequencyCsv(rows: ResponseRow[]): string {
 
       case 'number': {
         const values = tally.values
-        line('', E.kindStatistic, E.statCount, values.length, question.asked, '', '')
+        line('', E.kindStatistic, E.statCount, values.length, asked, '', '')
         if (values.length > 0) {
           const stats: Array<[string, number]> = [
             [E.statMean, mean(values)],
@@ -507,7 +538,7 @@ export function buildFrequencyCsv(rows: ResponseRow[]): string {
             [E.statMax, Math.max(...values)],
           ]
           for (const [name, value] of stats) {
-            line('', E.kindStatistic, name, values.length, question.asked, formatNumber(value, 2), '')
+            line('', E.kindStatistic, name, values.length, asked, formatNumber(value, 2), '')
           }
         }
         break
@@ -515,39 +546,106 @@ export function buildFrequencyCsv(rows: ResponseRow[]): string {
 
       case 'short_text':
       case 'long_text':
-        line('', E.kindFreeText, '', tally.written, question.asked, '', '')
+        line('', E.kindFreeText, '', tally.written, asked, '', '')
         break
     }
 
     // Raw ids no snapshot explains keep a line of their own. The hard rule:
     // nothing is dropped just because it stopped being recognisable.
-    for (const [raw, count] of [...tally.unresolved].toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    const unknown = [...tally.unresolved].toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    for (const [raw, count] of unknown) {
       line('', E.kindOption, raw, count, '', '', percent(count, tally.answered), true)
     }
 
     // Item nonresponse, made visible rather than left as a gap between two
     // columns nobody compares.
-    const missing = question.asked - tally.answered
+    const missing = asked - tally.answered
     if (missing > 0) {
-      line('', E.kindNoAnswer, '', missing, question.asked, '', percent(missing, question.asked))
+      line('', E.kindNoAnswer, '', missing, asked, '', percent(missing, asked))
     }
   }
 
-  appendOpenAnswer(body, rows)
+  appendOpenAnswer(body, rows, segment, group)
+}
+
+/** The respondents whose answer to `question` was `optionId`. */
+function groupOf(rows: ResponseRow[], question: SpineQuestion, optionId: string): ResponseRow[] {
+  return rows.filter((row) => {
+    const answer = row.answers?.[question.id]
+    return answer?.kind === 'option' && answer.optionId === optionId
+  })
+}
+
+/**
+ * Every question and option, with the counts — first over everybody, then
+ * over each subgroup of the questions marked `segment` in the data files.
+ *
+ * Denominators are recomputed inside each block, so a percentage of mataderos
+ * is over mataderos. That is the whole point: a breakdown against the overall
+ * denominator would mislead more than having no breakdown at all. It also
+ * falls out correctly for the conditional questions — inside the «Nunca»
+ * group, the fourteen gated questions were offered to nobody, so they read 0
+ * rather than borrowing the whole sample's numbers.
+ *
+ * Two things to read carefully. On a multiple-choice question the percentages
+ * add up to more than 100, because one person can pick several options — that
+ * is not a rounding error. And a group small enough to identify a respondent
+ * must not be published: `Respondieron` carries its size on every line.
+ */
+export function buildFrequencyCsv(rows: ResponseRow[]): string {
+  const spine = buildSpine(rows)
+
+  const headers = [
+    E.segment,
+    E.group,
+    E.audience,
+    E.section,
+    E.question,
+    E.statement,
+    E.row,
+    E.kind,
+    E.option,
+    E.answers,
+    E.offered,
+    E.answered,
+    E.value,
+    E.percent,
+    E.unresolved,
+  ]
+
+  const body: Array<Array<unknown>> = []
+  frequencyBlock(body, spine, rows, E.segmentTotal, E.groupAll, null)
+
+  for (const question of segmentsOf(spine)) {
+    for (const option of question.options) {
+      const group = groupOf(rows, question, option.id)
+      // A group nobody falls into is left out rather than emitted as a
+      // hundred lines of zeros. Nothing is hidden: its size is right there
+      // in the total block, on this question's own line.
+      if (group.length === 0) continue
+      frequencyBlock(body, spine, group, question.label, option.text, question.key)
+    }
+  }
 
   return toCsv(headers, body)
 }
 
 /** The open question is an answer too; dropping it would lose data. */
-function appendOpenAnswer(body: Array<Array<unknown>>, rows: ResponseRow[]): void {
+function appendOpenAnswer(
+  body: Array<Array<unknown>>,
+  rows: ResponseRow[],
+  segment: string,
+  group: string,
+): void {
   const asked = rows.filter((row) => wasAskedOpenQuestion(row.questionnaire, row.open_answer))
   if (asked.length === 0) return
 
   const written = asked.filter((row) => (row.open_answer ?? '').trim() !== '').length
-  const audience = asked[0]!.respondent_type
 
   body.push([
-    audienceLabel(audience),
+    segment,
+    group,
+    audienceLabel(asked[0]!.respondent_type),
     '',
     E.openAnswer,
     '',
@@ -561,4 +659,106 @@ function appendOpenAnswer(body: Array<Array<unknown>>, rows: ResponseRow[]): voi
     percent(written, asked.length),
     '',
   ])
+}
+
+// ─── The data dictionary ────────────────────────────────────────────────────
+
+/**
+ * One row per column of the matrix, describing what that column holds.
+ *
+ * Built from the SAME column list the matrix is built from, so the two cannot
+ * drift apart — a test asserts one row per column, in the same order. Without
+ * it the matrix is a wall of headers whose blanks are ambiguous: on a
+ * multiple-choice column an empty cell means «was never asked», which is not
+ * something anybody can guess six months later.
+ *
+ * `Versión` is here because option IDS are stable but option SETS are not: a
+ * cross-tab that pools two versions of a reworked question is corrupt, and
+ * without the version nothing would say so.
+ */
+export function buildCodebookCsv(rows: ResponseRow[]): string {
+  const spine = buildSpine(rows)
+  const columns = matrixColumns(spine, overflowKeys(rows, spine))
+  const byKey = new Map(spine.map((question) => [question.key, question]))
+
+  const headers = [
+    E.dictColumn,
+    E.question,
+    E.statement,
+    E.section,
+    E.kind,
+    E.dictUnit,
+    E.dictValues,
+    E.version,
+  ]
+
+  const body = columns.map((column) => {
+    const question = byKey.get(column.spineKey)
+    if (!question) return [column.header, column.questionId, '', '', '', '', '', '']
+    return [
+      column.header,
+      question.label,
+      question.text,
+      question.sectionName,
+      typeLabel(question.type),
+      question.unit ?? '',
+      possibleValues(question, column),
+      question.version,
+    ]
+  })
+
+  // The open question is not in `questions[]`, so it escapes every loop over
+  // them — and would otherwise be the one column with no entry.
+  if (rows.some((row) => wasAskedOpenQuestion(row.questionnaire, row.open_answer))) {
+    body.push([E.openAnswer, E.openAnswer, '', '', E.typeText, '', E.dictFree, ''])
+  }
+
+  return toCsv(headers, body)
+}
+
+function typeLabel(type: SpineQuestion['type']): string {
+  switch (type) {
+    case 'single_choice':
+      return E.typeSingle
+    case 'multi_choice':
+      return E.typeMulti
+    case 'scale':
+      return E.typeScale
+    case 'scale_grid':
+      return E.typeGrid
+    case 'number':
+      return E.typeNumber
+    default:
+      return E.typeText
+  }
+}
+
+function possibleValues(question: SpineQuestion, column: MatrixColumn): string {
+  // An overflow column holds raw ids no snapshot explains, whatever the type.
+  if (column.overflow) return E.dictFree
+
+  switch (question.type) {
+    case 'single_choice':
+      return question.options.map((option) => option.text).join(' | ')
+    // Each option became a column of its own, so the values are the three
+    // states — and the blank is the one nobody can guess.
+    case 'multi_choice':
+      return E.dictYesNoBlank
+    case 'scale':
+    case 'scale_grid':
+      return scaleValues(question)
+    case 'number':
+      return E.dictNumber
+    default:
+      return E.dictFree
+  }
+}
+
+function scaleValues(question: SpineQuestion): string {
+  const { min, max } = question.scale ?? { min: 1, max: 5 }
+  const minLabel = question.scale?.minLabel
+  const maxLabel = question.scale?.maxLabel
+  return minLabel && maxLabel
+    ? format(E.dictScaleLabelled, { min, max, minLabel, maxLabel })
+    : format(E.dictScale, { min, max })
 }

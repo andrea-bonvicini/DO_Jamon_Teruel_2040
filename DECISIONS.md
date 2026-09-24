@@ -645,3 +645,99 @@ sobre un respondente es una columna de unos.
 310 tests, `typecheck`, `lint`, `build` y el detector de diseño en cero. Y las cuatro descargas
 **abiertas de verdad**: BOM y UTF-8 correctos, acentos bien, cero decimales con punto, 58 columnas
 en la matriz de empresas y 50 en la de consumidores, 13 en las dos de frecuencias.
+
+## 2026-09-24 — Desglose por segmento y diccionario de datos
+
+Pregunta del responsable del proyecto: con el fichero de frecuencias, ¿se puede saber si una
+respuesta la dio un matadero o una ganadería? ¿Se pierden hallazgos porque el CSV esté mal
+estructurado?
+
+**No se perdía nada.** La matriz lleva en la misma fila el tipo de actividad y todas las respuestas
+de esa empresa, así que una tabla dinámica ya contestaba. Lo que faltaba era tenerlo hecho, y que
+quien abra la matriz dentro de seis meses sepa qué está mirando.
+
+### El desglose
+
+El fichero de frecuencias gana `Segmento` y `Grupo`: primero el bloque total, después uno por cada
+subgrupo. **Los denominadores se recalculan dentro de cada grupo** — un porcentaje de mataderos
+tiene que ser sobre mataderos. Un desglose contra el denominador general engañaría más que no tener
+desglose.
+
+Sale gratis y correcto también para las condicionales: dentro del grupo «Nunca», las catorce
+preguntas que cuelgan de si come jamón se ofrecieron a nadie, así que dan 0 y el porcentaje queda
+vacío, en vez de tomar prestados los números de toda la muestra. Hay un test que fija exactamente
+ese caso.
+
+Dos omisiones deliberadas: una variable no se cruza consigo misma —«de los mataderos, el 100 % son
+mataderos» es ruido— y **un grupo en el que no cae nadie no se emite**, porque serían cien líneas
+de ceros y su tamaño ya está en el bloque total, en la línea de esa misma pregunta. Eso bajó el
+fichero de empresas de 1.655 líneas a 905.
+
+### Dónde se decide qué se cruza
+
+En los ficheros de datos, con `segment: true` sobre la pregunta. Así se cambia un cruce sin tocar
+código, que es lo que pide la regla 4. Marcadas: C-Q01 a C-Q04 en empresas; I-Q01, I-Q02, I-Q04,
+I-Q05 e I-Q06 en consumidores. Un test las fija por id, para que quitar o añadir una sea una
+decisión y no un accidente.
+
+Tres exclusiones, cada una por su motivo:
+
+- **Las de elección múltiple.** Quien marca tres mercados estaría en tres grupos a la vez y sus
+  respuestas se contarían tres veces. El test lo impide.
+- **I-Q03 Comunidad autónoma (19 opciones).** Multiplicaría el fichero por 19 y, con muestra
+  nacional, casi todas las celdas quedarían con dos o tres personas. Sigue en la matriz: «Aragón
+  frente al resto» sale de una tabla dinámica.
+- **El nombre de la empresa**, que es una clave única, no un segmento.
+
+**I-Q06 va incluida aunque no sea del bloque de clasificación.** Es la pregunta que parte la
+muestra, así que es el corte más informativo del cuestionario de consumidores y además hace visible
+esa estructura.
+
+La marca viaja en el snapshot, como todo lo demás. Las filas guardadas antes no la llevan: para
+ellas se emite solo el bloque total, sin inventar un desglose. **No se sube la `version`**: no
+cambia ninguna pregunta, ningún texto ni ninguna opción, y subirla fragmentaría la columna de
+versión sin motivo.
+
+### Grupos pequeños
+
+No se suprime nada. Quien descarga esto ya puede ver cada respuesta una por una en el panel, así
+que ocultar aquí sería teatro. Lo que sí hace falta es que el tamaño del grupo no se pueda pasar
+por alto, y la columna `Respondieron` lo lleva en cada línea. **Queda dicho aquí: un grupo por
+debajo de cinco no se publica**, que es donde la promesa de confidencialidad a las empresas se
+puede romper de verdad.
+
+### El diccionario
+
+`diccionario-<público>.csv`, una fila por columna de la matriz: la pregunta, el enunciado completo,
+la sección, el tipo, la unidad, los valores posibles y la versión.
+
+Lo que de verdad hacía falta escribir en alguna parte: en una columna de elección múltiple, **una
+celda vacía significa «no se le preguntó», no «no»**. Eso no hay forma de adivinarlo sin conocer el
+diseño, y con catorce preguntas condicionales es la diferencia entre un análisis correcto y uno que
+se inventa media muestra.
+
+Se genera **desde la misma lista de columnas que construye la matriz**, no desde una copia. El test
+compara las dos exactamente: quita de la cabecera de la matriz las columnas que se explican solas
+—el nombre de la empresa, la fecha y la cola técnica— y lo que queda tiene que *ser* el diccionario,
+en orden. Si alguna vez se separan, salta ahí y no en el análisis.
+
+`Versión` está porque los identificadores de opción son estables pero **los conjuntos de opciones
+no**: un cruce que mezcle dos versiones de una pregunta reformulada queda corrupto, y sin la
+versión nada lo diría.
+
+### Estructura
+
+Los recuentos salen de la espina. La **estructura** —qué preguntas hay, en qué orden, con qué
+opciones— tiene que venir de todas las filas, o los bloques no tendrían las mismas líneas y el
+fichero no se podría pivotar; los **recuentos** son de un subgrupo cada vez. Iban juntos en
+`SpineQuestion.asked` y `SpineOption.offered`, y mezclados el desglose era imposible. Ahora hay
+`countOffers(rows, spine)` aparte.
+
+### Comprobado
+
+331 tests, `typecheck`, `lint`, `build` y el detector en cero. Los tres ficheros descargados y
+abiertos de verdad, con la aritmética comprobada a mano sobre los ejemplos: dos empresas, una
+ganadería que dice «Insuficiente» y un secadero que dice «Ajustada» → 50 % cada una en el total,
+100 % dentro de su grupo, y el grupo «Matadero» ni aparece porque está vacío. Todos rectangulares,
+BOM y UTF-8 correctos, cero decimales con punto. Capturas del panel con los tres enlaces a 1440 px
+y medición en el DOM a 390 px: `scrollWidth` = 390, sin desbordamiento.

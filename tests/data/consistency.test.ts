@@ -207,3 +207,50 @@ describe('the snapshot carries what a human needs to read a row back', () => {
     expect(snapshot.questions.find((q) => q.id === 'C-Q01')?.unit).toBeUndefined()
   })
 })
+
+const marked = (audience: 'company' | 'individual') =>
+  QUESTIONNAIRES[audience].questions.filter((question) => question.segment).map((q) => q.id)
+
+describe('the questions the results are broken down by', () => {
+  it('is a decision written down, not an accident of ordering', () => {
+    // Pinned by id so adding or removing a cut is a deliberate edit here.
+    expect(marked('company')).toEqual(['C-Q01', 'C-Q02', 'C-Q03', 'C-Q04'])
+    expect(marked('individual')).toEqual(['I-Q01', 'I-Q02', 'I-Q04', 'I-Q05', 'I-Q06'])
+  })
+
+  it('never marks a multiple-choice question', () => {
+    // One respondent would land in several groups at once and be counted
+    // several times, which quietly inflates every figure in the file.
+    for (const audience of ['company', 'individual'] as const) {
+      for (const question of QUESTIONNAIRES[audience].questions) {
+        if (question.segment) expect(question.type).toBe('single_choice')
+      }
+    }
+  })
+
+  it('never marks a question only some respondents are asked', () => {
+    // A conditional cut would silently exclude everyone who never saw it.
+    for (const audience of ['company', 'individual'] as const) {
+      for (const question of QUESTIONNAIRES[audience].questions) {
+        if (question.segment) expect(question.showIf).toBeUndefined()
+      }
+    }
+  })
+
+  it('leaves out the 19 autonomous communities on purpose', () => {
+    // It would multiply the frequency file by 19 and leave most cells with
+    // two or three people. It is still in the matrix for a pivot table.
+    const ccaa = QUESTIONNAIRES.individual.questions.find((q) => q.id === 'I-Q03')!
+    expect(ccaa.segment).toBeUndefined()
+  })
+
+  it('carries the mark into the snapshot, so an old row knows how it was cut', async () => {
+    const { buildSnapshot } = await import('../../src/data/snapshot')
+    const snapshot = buildSnapshot(QUESTIONNAIRES.company, {
+      'C-Q01': { kind: 'option' as const, optionId: 'matadero' },
+    })
+
+    expect(snapshot.questions.find((q) => q.id === 'C-Q01')?.segment).toBe(true)
+    expect(snapshot.questions.find((q) => q.id === 'C-Q05')?.segment).toBeUndefined()
+  })
+})

@@ -19,7 +19,13 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { hasValidAdminSession, loginCookie, logoutCookie, verifyPassword } from '../server/auth.js'
 import { attachment } from '../server/csv.js'
-import { buildFrequencyCsv, buildMatrixCsv, exportFilename } from '../server/exports.js'
+import {
+  buildCodebookCsv,
+  buildFrequencyCsv,
+  buildMatrixCsv,
+  exportFilename,
+} from '../server/exports.js'
+import type { ExportFormat } from '../server/exports.js'
 import { EXPORT_LIMIT, parseListFilters } from '../server/listFilters.js'
 import type { ApiRequest } from '../server/http.js'
 import { validateSubmission } from '../server/validateSubmission.js'
@@ -187,9 +193,10 @@ export async function handleDevApi(
 
   // ── GET /api/admin/export?format= ──────────────────────────────────────
   if (path === '/api/admin/export') {
-    const format = url.searchParams.get('format') ?? 'matrix'
-    if (format !== 'matrix' && format !== 'frequency') {
-      return json(res, 400, { error: 'format must be "matrix" or "frequency".' }), true
+    const format = (url.searchParams.get('format') ?? 'matrix') as ExportFormat
+    const build = DEV_BUILDERS[format]
+    if (!build) {
+      return json(res, 400, { error: 'format must be "matrix", "frequency" or "codebook".' }), true
     }
 
     const id = url.searchParams.get('id')
@@ -200,12 +207,17 @@ export async function handleDevApi(
     }
 
     const rows = selectRows(apiRequest, EXPORT_LIMIT)
-    const csv = format === 'matrix' ? buildMatrixCsv(rows) : buildFrequencyCsv(rows)
     const audience = parseListFilters(apiRequest, EXPORT_LIMIT).respondentType
-    return sendCsv(res, exportFilename(format, audience), csv), true
+    return sendCsv(res, exportFilename(format, audience), build(rows)), true
   }
 
   return json(res, 404, { error: 'Unknown route.' }), true
+}
+
+const DEV_BUILDERS: Record<ExportFormat, (rows: ResponseRow[]) => string> = {
+  matrix: buildMatrixCsv,
+  frequency: buildFrequencyCsv,
+  codebook: buildCodebookCsv,
 }
 
 function sendCsv(res: ServerResponse, filename: string, csv: string): void {

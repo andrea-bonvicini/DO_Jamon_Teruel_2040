@@ -67,6 +67,7 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       help: 'Marque un tramo.',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: '18-29', text: '18–29' },
         { id: '30-44', text: '30–44' },
@@ -81,6 +82,7 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       text: 'Sexo',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: 'mujer', text: 'Mujer' },
         { id: 'hombre', text: 'Hombre' },
@@ -104,6 +106,7 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       text: 'Tamaño de su localidad',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: 'rural', text: 'Rural (menos de 5.000 hab.)' },
         { id: 'ciudad-media', text: 'Ciudad pequeña/mediana' },
@@ -117,6 +120,7 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       text: '¿Quién compra la alimentación en su hogar?',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: 'yo', text: 'Yo, principalmente' },
         { id: 'compartido', text: 'Compartido' },
@@ -132,6 +136,7 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       text: '¿Con qué frecuencia consume jamón curado?',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: 'varias-semana', text: 'Varias veces por semana' },
         { id: 'semanal', text: 'Semanal' },

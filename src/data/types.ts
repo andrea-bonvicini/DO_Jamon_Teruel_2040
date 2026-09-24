@@ -61,6 +61,20 @@ interface QuestionBase {
   help?: string // optional clarifying sentence shown under the question
   required: boolean // if false, the respondent may press Next without answering
   showIf?: ShowIf
+  /**
+   * Marks this question as one the frequency export breaks the results down
+   * by — «of the mataderos, how many said X». It describes WHO is answering
+   * rather than what they think, so it only ever goes on `single_choice`:
+   * with multiple choice the same person would land in several groups at
+   * once and be counted several times.
+   *
+   * It lives here, in the data, so the cuts can be changed without touching
+   * a line of code. Two things to weigh before adding one: a question with
+   * many options multiplies the file by that many and leaves most cells with
+   * two or three people in them, and a group small enough to identify
+   * somebody must not be published — see DECISIONS.md.
+   */
+  segment?: boolean
 }
 
 export interface SingleChoiceQuestion extends QuestionBase {

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildFrequencyCsv, buildMatrixCsv, exportFilename } from '../../server/exports'
+import {
+  buildCodebookCsv,
+  buildFrequencyCsv,
+  buildMatrixCsv,
+  exportFilename,
+} from '../../server/exports'
 import type { ResponseRow } from '../../server/responsesRepository'
 import { buildSnapshot } from '../../src/data/snapshot'
 import type { QuestionnaireSnapshot, SnapshotQuestion } from '../../src/data/snapshot'
@@ -538,5 +543,261 @@ describe('both files', () => {
     expect(exportFilename('matrix', 'company')).toBe('respuestas-empresas.csv')
     expect(exportFilename('frequency', 'individual')).toBe('frecuencias-consumidores.csv')
     expect(exportFilename('matrix', null)).toBe('respuestas-todas.csv')
+  })
+})
+
+// ─── The breakdown ──────────────────────────────────────────────────────────
+
+/** One line of the frequency file, located by segment, group and option. */
+function findLine(
+  rows: string[][],
+  segment: string,
+  group: string,
+  question: string,
+  option: string,
+): string[] | undefined {
+  const h = rows[0]!
+  return rows
+    .slice(1)
+    .find(
+      (l) =>
+        l[h.indexOf('Segmento')] === segment &&
+        l[h.indexOf('Grupo')] === group &&
+        l[h.indexOf('Pregunta')] === question &&
+        l[h.indexOf('Opción')] === option,
+    )
+}
+
+describe('the breakdown by segment', () => {
+  /** A cut («Tipo») with two groups, and an opinion question to cross it by. */
+  const TIPO = makeQuestion({
+    id: 'S1',
+    type: 'single_choice',
+    label: 'Tipo',
+    text: '¿Qué tipo?',
+    segment: true,
+    options: [
+      { id: 'mat', text: 'Matadero' },
+      { id: 'gan', text: 'Ganadería' },
+    ],
+  })
+  const OPINION = makeQuestion({
+    id: 'Q2',
+    type: 'single_choice',
+    label: 'Rentabilidad',
+    text: '¿Rentable?',
+    options: [
+      { id: 'si', text: 'Suficiente' },
+      { id: 'no', text: 'Insuficiente' },
+    ],
+  })
+  const snap = snapshot('v1', '2026-01-01T00:00:00.000Z', [TIPO, OPINION])
+
+  /** Three mataderos, of which two say «Insuficiente»; one ganadería says so too. */
+  const pool = [
+    makeRow('r1', snap, {
+      S1: { kind: 'option', optionId: 'mat' },
+      Q2: { kind: 'option', optionId: 'no' },
+    }),
+    makeRow('r2', snap, {
+      S1: { kind: 'option', optionId: 'mat' },
+      Q2: { kind: 'option', optionId: 'no' },
+    }),
+    makeRow('r3', snap, {
+      S1: { kind: 'option', optionId: 'mat' },
+      Q2: { kind: 'option', optionId: 'si' },
+    }),
+    makeRow('r4', snap, {
+      S1: { kind: 'option', optionId: 'gan' },
+      Q2: { kind: 'option', optionId: 'no' },
+    }),
+  ]
+
+  it('keeps the total and adds a block per group', () => {
+    const rows = parse(buildFrequencyCsv(pool))
+
+    expect(findLine(rows, '(total)', '(todas)', 'Rentabilidad', 'Insuficiente')).toBeDefined()
+    expect(findLine(rows, 'Tipo', 'Matadero', 'Rentabilidad', 'Insuficiente')).toBeDefined()
+    expect(findLine(rows, 'Tipo', 'Ganadería', 'Rentabilidad', 'Insuficiente')).toBeDefined()
+  })
+
+  it('computes a group’s percentage over that group, not over everybody', () => {
+    // This is the whole point. Two of three mataderos say «Insuficiente»:
+    // that is 66,7 % of mataderos, not 50 % of the four responses.
+    const rows = parse(buildFrequencyCsv(pool))
+    const mataderos = findLine(rows, 'Tipo', 'Matadero', 'Rentabilidad', 'Insuficiente')!
+
+    expect(column(rows, mataderos, 'Respuestas')).toBe('2')
+    expect(column(rows, mataderos, 'Respondieron')).toBe('3')
+    expect(column(rows, mataderos, '%')).toBe('66,7')
+
+    const total = findLine(rows, '(total)', '(todas)', 'Rentabilidad', 'Insuficiente')!
+    expect(column(rows, total, '%')).toBe('75,0')
+  })
+
+  it('recomputes how many were asked inside each group', () => {
+    const rows = parse(buildFrequencyCsv(pool))
+    const ganaderias = findLine(rows, 'Tipo', 'Ganadería', 'Rentabilidad', 'Insuficiente')!
+    expect(column(rows, ganaderias, 'Preguntados')).toBe('1')
+  })
+
+  it('leaves out a group nobody falls into, whose size the total already gives', () => {
+    // Otherwise every unused option costs a hundred lines of zeros.
+    const rows = parse(buildFrequencyCsv(pool.slice(0, 3))) // three mataderos
+    const groups = new Set(rows.slice(1).map((l) => l[rows[0]!.indexOf('Grupo')]))
+
+    expect(groups).toEqual(new Set(['(todas)', 'Matadero']))
+    // And the empty group is still visible where it matters: its own count.
+    const ganaderia = findLine(rows, '(total)', '(todas)', 'Tipo', 'Ganadería')!
+    expect(column(rows, ganaderia, 'Respuestas')).toBe('0')
+  })
+
+  it('does not cross a cut with itself', () => {
+    // «Of the mataderos, 100 % are mataderos» is noise.
+    const rows = parse(buildFrequencyCsv(pool))
+    expect(findLine(rows, 'Tipo', 'Matadero', 'Tipo', 'Matadero')).toBeUndefined()
+    // But it is still there in the total block.
+    expect(findLine(rows, '(total)', '(todas)', 'Tipo', 'Matadero')).toBeDefined()
+  })
+
+  it('gives a conditional question a zero denominator in the group that never saw it', () => {
+    // The consumer questionnaire hangs fourteen questions off «¿come jamón?».
+    // Inside the «Nunca» group they were offered to nobody, and must read 0
+    // instead of borrowing the whole sample's numbers.
+    const never: Answers = { 'I-Q06': { kind: 'option', optionId: 'nunca' } }
+    const eats: Answers = {
+      'I-Q06': { kind: 'option', optionId: 'semanal' },
+      'I-Q14': { kind: 'option', optionId: 'igual' },
+    }
+    const rows = parse(
+      buildFrequencyCsv([
+        makeRow(
+          'r1',
+          buildSnapshot(QUESTIONNAIRES.individual, never, '2026-01-01T00:00:00.000Z'),
+          never,
+          { respondent_type: 'individual', questionnaire_id: 'individual' },
+        ),
+        makeRow(
+          'r2',
+          buildSnapshot(QUESTIONNAIRES.individual, eats, '2026-01-02T00:00:00.000Z'),
+          eats,
+          { respondent_type: 'individual', questionnaire_id: 'individual' },
+        ),
+      ]),
+    )
+
+    const h = rows[0]!
+    const gated = rows
+      .slice(1)
+      .filter(
+        (l) =>
+          l[h.indexOf('Grupo')] === 'Nunca' && l[h.indexOf('Pregunta')] === 'Elección D.O. vs sin sello',
+      )
+    expect(gated.length).toBeGreaterThan(0)
+    for (const l of gated) {
+      expect(column(rows, l, 'Preguntados')).toBe('0')
+      expect(column(rows, l, 'Respondieron')).toBe('0')
+      expect(column(rows, l, '%')).toBe('')
+    }
+  })
+
+  it('emits only the total for rows saved before the cuts existed', () => {
+    const old = snapshot('v0', '2025-01-01T00:00:00.000Z', [
+      makeQuestion({ id: 'Q1', type: 'single_choice', label: 'Algo', text: 'Algo', options: [{ id: 'a', text: 'A' }] }),
+    ])
+    const rows = parse(buildFrequencyCsv([makeRow('r1', old, { Q1: { kind: 'option', optionId: 'a' } })]))
+
+    // No invented breakdown: every line belongs to the total block.
+    const segments = new Set(rows.slice(1).map((l) => l[rows[0]!.indexOf('Segmento')]))
+    expect(segments).toEqual(new Set(['(total)']))
+  })
+
+  it('never builds a group out of a multiple-choice question', () => {
+    const multi = snapshot('v1', '2026-01-01T00:00:00.000Z', [
+      { ...COLOUR([['a', 'Azul']]), segment: true },
+    ])
+    const rows = parse(
+      buildFrequencyCsv([makeRow('r1', multi, { Q1: { kind: 'options', optionIds: ['a'] } })]),
+    )
+    const segments = new Set(rows.slice(1).map((l) => l[rows[0]!.indexOf('Segmento')]))
+    expect(segments).toEqual(new Set(['(total)']))
+  })
+})
+
+// ─── The data dictionary ────────────────────────────────────────────────────
+
+describe('the data dictionary', () => {
+  const answers: Answers = {
+    'C-Q01': { kind: 'option', optionId: 'secadero' },
+    'C-Q05': { kind: 'options', optionIds: ['local'] },
+    'C-Q15': { kind: 'scaleRows', values: { 'aporta-valor': 5 } },
+  }
+  const pool = [
+    makeRow(
+      'r1',
+      buildSnapshot(QUESTIONNAIRES.company, answers, '2026-01-01T00:00:00.000Z'),
+      answers,
+      { open_answer: 'algo' },
+    ),
+  ]
+
+  it('has exactly one row per column of the matrix, in the same order', () => {
+    // If the two ever drift apart it must fail here, not in the analysis.
+    const matrix = parse(buildMatrixCsv(pool))[0]!
+    const dictionary = parse(buildCodebookCsv(pool))
+      .slice(1)
+      .map((l) => l[0])
+
+    // Exactly: strip the columns that describe themselves — the company
+    // name, the date and the technical tail — and what is left must BE the
+    // dictionary, in order. A column gained or lost on either side fails.
+    const selfEvident = new Set([
+      'Nombre de la empresa',
+      'Fecha',
+      'Fecha ISO',
+      'Público',
+      'Versión',
+      'Identificador',
+      'Sin resolver',
+    ])
+    expect(matrix.filter((header) => !selfEvident.has(header))).toEqual(dictionary)
+  })
+
+  it('says what a blank means on a multiple-choice column', () => {
+    // The one thing nobody can guess six months later.
+    const rows = parse(buildCodebookCsv(pool))
+    const mercados = rows.slice(1).find((l) => l[0]!.startsWith('Mercados — '))!
+    expect(column(rows, mercados, 'Valores posibles')).toBe('Sí | No | (vacío = no se preguntó)')
+  })
+
+  it('lists every option of a single-choice question, chosen or not', () => {
+    const rows = parse(buildCodebookCsv(pool))
+    const actividad = rows.slice(1).find((l) => l[0] === 'Tipo de actividad')!
+    const values = column(rows, actividad, 'Valores posibles')
+
+    expect(values).toContain('Matadero')
+    expect(values).toContain('Secadero / industria elaboradora')
+  })
+
+  it('carries the version, because option sets change between them', () => {
+    const rows = parse(buildCodebookCsv(pool))
+    const actividad = rows.slice(1).find((l) => l[0] === 'Tipo de actividad')!
+    expect(column(rows, actividad, 'Versión')).toBe(QUESTIONNAIRES.company.version)
+  })
+
+  it('describes the open question, which is in no list of questions', () => {
+    const rows = parse(buildCodebookCsv(pool))
+    expect(rows.slice(1).some((l) => l[0] === 'Respuesta abierta')).toBe(true)
+  })
+
+  it('gives a scale its range', () => {
+    const rows = parse(buildCodebookCsv(pool))
+    const grid = rows.slice(1).find((l) => l[0]!.startsWith('Valoración de la D.O. — '))!
+    expect(column(rows, grid, 'Valores posibles')).toContain('1')
+    expect(column(rows, grid, 'Valores posibles')).toContain('5')
+  })
+
+  it('writes only a header when there is nothing to describe', () => {
+    expect(parse(buildCodebookCsv([]))).toHaveLength(1)
   })
 })

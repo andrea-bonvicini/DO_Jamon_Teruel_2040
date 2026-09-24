@@ -111,6 +111,7 @@ export const STRINGS = {
     apply: 'Aplicar',
     exportMatrix: 'Exportar respuestas (CSV)',
     exportFrequency: 'Exportar frecuencias (CSV)',
+    exportCodebook: 'Exportar diccionario (CSV)',
     colDate: 'Fecha',
     colType: 'Tipo',
     colIdentification: 'Identificación',
@@ -155,6 +156,10 @@ export const STRINGS = {
     withUnit: '{label} ({unit})',
 
     // The frequency file
+    segment: 'Segmento',
+    group: 'Grupo',
+    segmentTotal: '(total)',
+    groupAll: '(todas)',
     section: 'Sección',
     question: 'Pregunta',
     statement: 'Enunciado',
@@ -174,9 +179,26 @@ export const STRINGS = {
     kindFreeText: 'Texto libre',
     kindNoAnswer: 'Sin respuesta',
 
+    // The data dictionary
+    dictColumn: 'Columna',
+    dictValues: 'Valores posibles',
+    dictUnit: 'Unidad',
+    dictFree: 'Texto libre',
+    dictNumber: 'Número',
+    dictYesNoBlank: 'Sí | No | (vacío = no se preguntó)',
+    dictScale: 'De {min} a {max}',
+    dictScaleLabelled: 'De {min} ({minLabel}) a {max} ({maxLabel})',
+    typeSingle: 'Elección única',
+    typeMulti: 'Elección múltiple',
+    typeScale: 'Escala',
+    typeGrid: 'Fila de escala',
+    typeNumber: 'Numérica',
+    typeText: 'Texto',
+
     // File names. Kept ASCII on purpose: `attachment()` does not do RFC 5987.
     fileMatrix: 'respuestas',
     fileFrequency: 'frecuencias',
+    fileCodebook: 'diccionario',
     fileCompany: 'empresas',
     fileIndividual: 'consumidores',
     fileAll: 'todas',

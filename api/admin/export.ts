@@ -2,7 +2,13 @@ import { methodNotAllowed, singleParam, withErrorHandling } from '../../server/h
 import type { ApiRequest, ApiResponse } from '../../server/http.js'
 import { hasValidAdminSession } from '../../server/auth.js'
 import { attachment } from '../../server/csv.js'
-import { buildFrequencyCsv, buildMatrixCsv, exportFilename } from '../../server/exports.js'
+import {
+  buildCodebookCsv,
+  buildFrequencyCsv,
+  buildMatrixCsv,
+  exportFilename,
+} from '../../server/exports.js'
+import type { ExportFormat } from '../../server/exports.js'
 import { EXPORT_LIMIT, parseListFilters } from '../../server/listFilters.js'
 import { getResponse, listResponsesForExport } from '../../server/responsesRepository.js'
 
@@ -13,9 +19,9 @@ export default withErrorHandling(async (req: ApiRequest, res: ApiResponse) => {
     return
   }
 
-  const format = singleParam(req.query, 'format') ?? 'matrix'
-  if (format !== 'matrix' && format !== 'frequency') {
-    res.status(400).json({ error: 'format must be "matrix" or "frequency".' })
+  const format = (singleParam(req.query, 'format') ?? 'matrix') as ExportFormat
+  if (!BUILDERS[format]) {
+    res.status(400).json({ error: 'format must be "matrix", "frequency" or "codebook".' })
     return
   }
 
@@ -34,9 +40,14 @@ export default withErrorHandling(async (req: ApiRequest, res: ApiResponse) => {
 
   const filters = parseListFilters(req, EXPORT_LIMIT)
   const rows = await listResponsesForExport(filters)
-  const csv = format === 'matrix' ? buildMatrixCsv(rows) : buildFrequencyCsv(rows)
-  sendCsv(res, exportFilename(format, filters.respondentType), csv)
+  sendCsv(res, exportFilename(format, filters.respondentType), BUILDERS[format](rows))
 })
+
+const BUILDERS: Record<ExportFormat, (rows: Parameters<typeof buildMatrixCsv>[0]) => string> = {
+  matrix: buildMatrixCsv,
+  frequency: buildFrequencyCsv,
+  codebook: buildCodebookCsv,
+}
 
 function sendCsv(res: ApiResponse, filename: string, csv: string): void {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8')

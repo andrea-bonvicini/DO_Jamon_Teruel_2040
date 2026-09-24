@@ -27,6 +27,12 @@ export interface SnapshotQuestion {
    * reads the response back: 9 euros, 9 kilos, 9 years?
    */
   unit?: string
+  /**
+   * The frequency export breaks its results down by this question. Stored
+   * per response so an old row still knows how it was meant to be crossed,
+   * the same way it already knows what its options said.
+   */
+  segment?: boolean
 }
 
 export interface QuestionnaireSnapshot {
@@ -78,6 +84,12 @@ export function buildSnapshot(
 
       if (question.type === 'number' && question.unit) {
         entry.unit = question.unit
+      }
+
+      // Only ever on single choice: with multiple choice the same respondent
+      // would fall into several groups and be counted several times.
+      if (question.segment && question.type === 'single_choice') {
+        entry.segment = true
       }
 
       if (question.type === 'scale' || question.type === 'scale_grid') {

@@ -77,6 +77,9 @@ export function ListScreen({
             <a className="admin__link" href={exportUrl('frequency', exportFilters)}>
               {STRINGS.admin.exportFrequency}
             </a>
+            <a className="admin__link" href={exportUrl('codebook', exportFilters)}>
+              {STRINGS.admin.exportCodebook}
+            </a>
             <Button
               variant="quiet"
               onClick={() => {

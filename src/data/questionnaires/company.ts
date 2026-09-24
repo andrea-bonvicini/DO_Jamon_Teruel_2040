@@ -39,6 +39,7 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
       help: 'Marque una.',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: 'ganadera', text: 'Explotación ganadera', icon: 'ganaderia' },
         { id: 'matadero', text: 'Matadero', icon: 'matadero' },
@@ -54,6 +55,7 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
       text: 'Número de personas empleadas',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: '1-5', text: '1–5' },
         { id: '6-20', text: '6–20' },
@@ -68,6 +70,7 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
       text: 'Años de actividad',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: 'menos-10', text: 'Menos de 10' },
         { id: '10-25', text: '10–25' },
@@ -81,6 +84,7 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
       text: '¿Qué porcentaje de su actividad está vinculada a la D.O. Jamón de Teruel?',
       type: 'single_choice',
       required: true,
+      segment: true,
       options: [
         { id: 'menos-25', text: 'Menos del 25 %' },
         { id: '25-50', text: '25–50 %' },

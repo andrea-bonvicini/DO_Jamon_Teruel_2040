@@ -379,6 +379,17 @@ describe('GET /api/admin/export', () => {
     expect(captured.sent).toContain('Preguntados')
   })
 
+  it('serves the data dictionary', async () => {
+    listResponsesForExport.mockResolvedValueOnce([row()])
+    const { res, captured } = mockResponse()
+    await getExport(authed({ query: { format: 'codebook', type: 'company' } }), res)
+
+    expect(captured.headers['Content-Disposition']).toBe(
+      'attachment; filename="diccionario-empresas.csv"',
+    )
+    expect(captured.sent).toContain('Valores posibles')
+  })
+
   it('says «todas» when no population was filtered', async () => {
     listResponsesForExport.mockResolvedValueOnce([row()])
     const { res, captured } = mockResponse()
