@@ -131,22 +131,22 @@ describe('adminApi', () => {
 })
 
 describe('exportUrl', () => {
-  it('builds a wide export URL with no filters', () => {
-    expect(exportUrl('wide')).toBe('/api/admin/export?format=wide')
+  it('builds a matrix export URL with no filters', () => {
+    expect(exportUrl('matrix')).toBe('/api/admin/export?format=matrix')
   })
 
   it('carries the active filters so the CSV matches the screen', () => {
-    expect(exportUrl('long', { search: 'teruel', type: 'individual', direction: 'asc' })).toBe(
-      '/api/admin/export?format=long&search=teruel&type=individual&direction=asc',
+    expect(exportUrl('frequency', { search: 'teruel', type: 'individual', direction: 'asc' })).toBe(
+      '/api/admin/export?format=frequency&search=teruel&type=individual&direction=asc',
     )
   })
 
   it('omits empty filters', () => {
-    expect(exportUrl('wide', { search: '  ', type: '' })).toBe('/api/admin/export?format=wide')
+    expect(exportUrl('matrix', { search: '  ', type: '' })).toBe('/api/admin/export?format=matrix')
   })
 
   it('is never fetched — it is an href', () => {
     // A URL string, not a promise.
-    expect(typeof exportUrl('wide')).toBe('string')
+    expect(typeof exportUrl('matrix')).toBe('string')
   })
 })

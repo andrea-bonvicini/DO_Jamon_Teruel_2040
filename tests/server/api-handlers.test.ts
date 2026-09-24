@@ -355,44 +355,55 @@ describe('GET /api/admin/export', () => {
     expect(captured.statusCode).toBe(400)
   })
 
-  it('serves the wide CSV as a download', async () => {
+  it('serves the matrix as a download, named after its population', async () => {
     listResponsesForExport.mockResolvedValueOnce([row()])
     const { res, captured } = mockResponse()
-    await getExport(authed({ query: { format: 'wide' } }), res)
+    await getExport(authed({ query: { format: 'matrix', type: 'company' } }), res)
 
     expect(captured.statusCode).toBe(200)
     expect(captured.headers['Content-Type']).toBe('text/csv; charset=utf-8')
     expect(captured.headers['Content-Disposition']).toBe(
-      'attachment; filename="responses-wide.csv"',
+      'attachment; filename="respuestas-empresas.csv"',
     )
-    expect(captured.sent).toContain('respondent_type')
+    expect(captured.sent).toContain('Identificador')
   })
 
-  it('serves the long CSV under its own filename', async () => {
+  it('serves the frequency table under its own filename', async () => {
     listResponsesForExport.mockResolvedValueOnce([row()])
     const { res, captured } = mockResponse()
-    await getExport(authed({ query: { format: 'long' } }), res)
+    await getExport(authed({ query: { format: 'frequency', type: 'individual' } }), res)
 
     expect(captured.headers['Content-Disposition']).toBe(
-      'attachment; filename="responses-long.csv"',
+      'attachment; filename="frecuencias-consumidores.csv"',
     )
-    expect(captured.sent).toContain('question_label')
+    expect(captured.sent).toContain('Preguntados')
   })
 
-  it('defaults to the wide shape', async () => {
+  it('says «todas» when no population was filtered', async () => {
+    listResponsesForExport.mockResolvedValueOnce([row()])
+    const { res, captured } = mockResponse()
+    await getExport(authed({ query: { format: 'frequency' } }), res)
+    expect(captured.headers['Content-Disposition']).toBe(
+      'attachment; filename="frecuencias-todas.csv"',
+    )
+  })
+
+  it('defaults to the matrix', async () => {
     const { res, captured } = mockResponse()
     await getExport(authed(), res)
     expect(captured.headers['Content-Disposition']).toBe(
-      'attachment; filename="responses-wide.csv"',
+      'attachment; filename="respuestas-todas.csv"',
     )
   })
 
-  it('exports one response as long, and 404s for an unknown id', async () => {
+  it('exports one response as a matrix, and 404s for an unknown id', async () => {
+    // A frequency table over a single respondent is a column of ones, so the
+    // single-id route ignores the format and gives the matrix.
     getResponse.mockResolvedValueOnce(row())
     const { res, captured } = mockResponse()
-    await getExport(authed({ query: { id: 'abc' } }), res)
+    await getExport(authed({ query: { id: 'abc', format: 'frequency' } }), res)
     expect(captured.headers['Content-Disposition']).toBe(
-      'attachment; filename="response-abc-long.csv"',
+      'attachment; filename="respuesta-abc.csv"',
     )
 
     const missing = mockResponse()

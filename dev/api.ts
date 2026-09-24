@@ -19,7 +19,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { hasValidAdminSession, loginCookie, logoutCookie, verifyPassword } from '../server/auth.js'
 import { attachment } from '../server/csv.js'
-import { buildLongCsv, buildWideCsv } from '../server/exports.js'
+import { buildFrequencyCsv, buildMatrixCsv, exportFilename } from '../server/exports.js'
 import { EXPORT_LIMIT, parseListFilters } from '../server/listFilters.js'
 import type { ApiRequest } from '../server/http.js'
 import { validateSubmission } from '../server/validateSubmission.js'
@@ -187,21 +187,22 @@ export async function handleDevApi(
 
   // ── GET /api/admin/export?format= ──────────────────────────────────────
   if (path === '/api/admin/export') {
-    const format = url.searchParams.get('format') ?? 'wide'
-    if (format !== 'wide' && format !== 'long') {
-      return json(res, 400, { error: 'format must be "wide" or "long".' }), true
+    const format = url.searchParams.get('format') ?? 'matrix'
+    if (format !== 'matrix' && format !== 'frequency') {
+      return json(res, 400, { error: 'format must be "matrix" or "frequency".' }), true
     }
 
     const id = url.searchParams.get('id')
     if (id) {
       const response = store.find((row) => row.id === id)
       if (!response) return json(res, 404, { error: 'Response not found.' }), true
-      return sendCsv(res, `response-${id}-long.csv`, buildLongCsv([response])), true
+      return sendCsv(res, `respuesta-${id}.csv`, buildMatrixCsv([response])), true
     }
 
     const rows = selectRows(apiRequest, EXPORT_LIMIT)
-    const csv = format === 'wide' ? buildWideCsv(rows) : buildLongCsv(rows)
-    return sendCsv(res, `responses-${format}.csv`, csv), true
+    const csv = format === 'matrix' ? buildMatrixCsv(rows) : buildFrequencyCsv(rows)
+    const audience = parseListFilters(apiRequest, EXPORT_LIMIT).respondentType
+    return sendCsv(res, exportFilename(format, audience), csv), true
   }
 
   return json(res, 404, { error: 'Unknown route.' }), true

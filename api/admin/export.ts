@@ -2,7 +2,7 @@ import { methodNotAllowed, singleParam, withErrorHandling } from '../../server/h
 import type { ApiRequest, ApiResponse } from '../../server/http.js'
 import { hasValidAdminSession } from '../../server/auth.js'
 import { attachment } from '../../server/csv.js'
-import { buildLongCsv, buildWideCsv } from '../../server/exports.js'
+import { buildFrequencyCsv, buildMatrixCsv, exportFilename } from '../../server/exports.js'
 import { EXPORT_LIMIT, parseListFilters } from '../../server/listFilters.js'
 import { getResponse, listResponsesForExport } from '../../server/responsesRepository.js'
 
@@ -13,13 +13,14 @@ export default withErrorHandling(async (req: ApiRequest, res: ApiResponse) => {
     return
   }
 
-  const format = singleParam(req.query, 'format') ?? 'wide'
-  if (format !== 'wide' && format !== 'long') {
-    res.status(400).json({ error: 'format must be "wide" or "long".' })
+  const format = singleParam(req.query, 'format') ?? 'matrix'
+  if (format !== 'matrix' && format !== 'frequency') {
+    res.status(400).json({ error: 'format must be "matrix" or "frequency".' })
     return
   }
 
-  // A single response exports as long only: one wide row is not useful.
+  // A single response exports as a matrix whatever was asked for: a frequency
+  // table over one respondent is a column of ones.
   const id = singleParam(req.query, 'id')
   if (id) {
     const response = await getResponse(id)
@@ -27,13 +28,14 @@ export default withErrorHandling(async (req: ApiRequest, res: ApiResponse) => {
       res.status(404).json({ error: 'Response not found.' })
       return
     }
-    sendCsv(res, `response-${id}-long.csv`, buildLongCsv([response]))
+    sendCsv(res, `respuesta-${id}.csv`, buildMatrixCsv([response]))
     return
   }
 
-  const rows = await listResponsesForExport(parseListFilters(req, EXPORT_LIMIT))
-  const csv = format === 'wide' ? buildWideCsv(rows) : buildLongCsv(rows)
-  sendCsv(res, `responses-${format}.csv`, csv)
+  const filters = parseListFilters(req, EXPORT_LIMIT)
+  const rows = await listResponsesForExport(filters)
+  const csv = format === 'matrix' ? buildMatrixCsv(rows) : buildFrequencyCsv(rows)
+  sendCsv(res, exportFilename(format, filters.respondentType), csv)
 })
 
 function sendCsv(res: ApiResponse, filename: string, csv: string): void {

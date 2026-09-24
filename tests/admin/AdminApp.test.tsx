@@ -175,9 +175,9 @@ describe('the admin panel', () => {
     expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/admin/responses?search=teruel&type=company&direction=desc')
 
     expect(await screen.findByText(STRINGS.admin.empty)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: STRINGS.admin.exportWide })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: STRINGS.admin.exportMatrix })).toHaveAttribute(
       'href',
-      '/api/admin/export?format=wide&search=teruel&type=company&direction=desc',
+      '/api/admin/export?format=matrix&search=teruel&type=company&direction=desc',
     )
   })
 
@@ -285,13 +285,13 @@ describe('the admin panel', () => {
     render(<AdminApp />)
 
     await screen.findByRole('button', { name: /Secaderos/ })
-    expect(screen.getByRole('link', { name: STRINGS.admin.exportWide })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: STRINGS.admin.exportMatrix })).toHaveAttribute(
       'href',
       expect.stringContaining('type=company'),
     )
 
     await user.click(screen.getByRole('button', { name: /Consumidores/ }))
-    expect(screen.getByRole('link', { name: STRINGS.admin.exportWide })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: STRINGS.admin.exportMatrix })).toHaveAttribute(
       'href',
       expect.stringContaining('type=individual'),
     )

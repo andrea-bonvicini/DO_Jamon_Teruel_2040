@@ -71,7 +71,7 @@ export async function getResponseAdmin(id: string): Promise<AdminResponse> {
  * Returns a URL STRING, used as an `<a href>` so the browser sends the
  * session cookie and handles the download itself. Never fetched.
  */
-export function exportUrl(format: 'wide' | 'long', filters: AdminFilters = {}): string {
+export function exportUrl(format: 'matrix' | 'frequency', filters: AdminFilters = {}): string {
   return `/api/admin/export${queryString({ ...filters }, { format })}`
 }
 

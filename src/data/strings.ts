@@ -109,8 +109,8 @@ export const STRINGS = {
     ascending: 'Ascendente',
     descending: 'Descendente',
     apply: 'Aplicar',
-    exportWide: 'Exportar CSV (ancho)',
-    exportLong: 'Exportar CSV (largo)',
+    exportMatrix: 'Exportar respuestas (CSV)',
+    exportFrequency: 'Exportar frecuencias (CSV)',
     colDate: 'Fecha',
     colType: 'Tipo',
     colIdentification: 'Identificación',
@@ -130,6 +130,62 @@ export const STRINGS = {
     noAnswer: '—',
     unresolved: 'Valor no resuelto',
     anonymous: 'Anónima',
+  },
+
+  /**
+   * The CSV files. Every header and every literal that lands in a downloaded
+   * file lives here, because a spreadsheet is as user-facing as a screen.
+   */
+  exports: {
+    // Shared
+    audience: 'Público',
+    date: 'Fecha',
+    dateIso: 'Fecha ISO',
+    version: 'Versión',
+    responseId: 'Identificador',
+    unresolved: 'Sin resolver',
+    yes: 'Sí',
+    no: 'No',
+    openAnswer: 'Respuesta abierta',
+    /** Appended to a header when two different questions share a label. */
+    disambiguate: '{label} [{id}]',
+    /** A multi-choice or grid value no snapshot explains. */
+    overflow: '{label} — otros (sin resolver)',
+    gridColumn: '{label} — {row}',
+    withUnit: '{label} ({unit})',
+
+    // The frequency file
+    section: 'Sección',
+    question: 'Pregunta',
+    statement: 'Enunciado',
+    row: 'Fila',
+    kind: 'Tipo',
+    option: 'Opción',
+    answers: 'Respuestas',
+    offered: 'Preguntados',
+    answered: 'Respondieron',
+    value: 'Valor',
+    percent: '%',
+
+    kindOption: 'Opción',
+    kindMultiOption: 'Opción múltiple',
+    kindScalePoint: 'Punto de escala',
+    kindStatistic: 'Estadístico',
+    kindFreeText: 'Texto libre',
+    kindNoAnswer: 'Sin respuesta',
+
+    // File names. Kept ASCII on purpose: `attachment()` does not do RFC 5987.
+    fileMatrix: 'respuestas',
+    fileFrequency: 'frecuencias',
+    fileCompany: 'empresas',
+    fileIndividual: 'consumidores',
+    fileAll: 'todas',
+
+    statCount: 'n',
+    statMean: 'Media',
+    statMedian: 'Mediana',
+    statMin: 'Mínimo',
+    statMax: 'Máximo',
   },
 
   errors: {

@@ -71,11 +71,11 @@ export function ListScreen({
           </nav>
 
           <span className="admin__toolbar">
-            <a className="admin__link" href={exportUrl('wide', exportFilters)}>
-              {STRINGS.admin.exportWide}
+            <a className="admin__link" href={exportUrl('matrix', exportFilters)}>
+              {STRINGS.admin.exportMatrix}
             </a>
-            <a className="admin__link" href={exportUrl('long', exportFilters)}>
-              {STRINGS.admin.exportLong}
+            <a className="admin__link" href={exportUrl('frequency', exportFilters)}>
+              {STRINGS.admin.exportFrequency}
             </a>
             <Button
               variant="quiet"

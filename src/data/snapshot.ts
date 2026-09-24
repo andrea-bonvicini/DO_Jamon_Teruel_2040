@@ -34,6 +34,15 @@ export interface QuestionnaireSnapshot {
   version: string
   capturedAt: string // ISO timestamp
   questions: SnapshotQuestion[]
+  /**
+   * Present only when the questionnaire ended with an open question. Without
+   * it a stored `open_answer: null` cannot be told apart from "was never
+   * asked" — only the company questionnaire has one — and the export would
+   * divide the open answers by the whole sample. Optional, so rows written
+   * before this field existed still parse; the export falls back to treating
+   * a non-null `open_answer` as proof the question was asked.
+   */
+  openQuestion?: { text: string }
 }
 
 /** Built from the VISIBLE questions only, at submission time. */
@@ -48,6 +57,7 @@ export function buildSnapshot(
     questionnaireId: questionnaire.id,
     version: questionnaire.version,
     capturedAt,
+    ...(questionnaire.openQuestion ? { openQuestion: { text: questionnaire.openQuestion.text } } : {}),
     questions: visibleQuestions(questionnaire.questions, answers).map((question) => {
       const entry: SnapshotQuestion = {
         id: question.id,

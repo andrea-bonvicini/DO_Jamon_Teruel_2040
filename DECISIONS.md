@@ -566,3 +566,82 @@ capturas a 390 px parecían desbordarse otra vez; era el recorte mínimo de la v
 no el diseño.
 
 No se ha tocado ni una pregunta, ni un texto, ni una opción de respuesta.
+
+## 2026-09-24 — Las descargas se rehacen: matriz y recuento
+
+Los dos CSV anteriores no servían para lo que se descargaban. Los dos eran per-respondente y
+redundantes entre sí, y el «ancho» —el único que se abría bien en Excel— usaba los **identificadores
+de pregunta como cabecera**: quien lo abría veía `C-Q01`, `C-Q15_aporta-valor`, `answers_count`,
+`unresolved`, y ninguna forma de saber qué se había preguntado.
+
+Ahora hay dos ficheros que hacen dos trabajos distintos:
+
+- **`respuestas-<público>.csv`**: una fila por quien responde, el nombre de la empresa delante, las
+  preguntas como cabecera y las respuestas en claro. Es el dato en bruto del que sale todo lo demás.
+- **`frecuencias-<público>.csv`**: cada pregunta, cada opción y cuánta gente la eligió.
+
+Se mantienen los dos, y no solo el recuento, porque de la matriz se sacan las frecuencias con una
+tabla dinámica en dos minutos y del recuento no se vuelve nunca a la matriz. Sin la matriz no se
+puede cruzar nada —«qué opinan del precio los de 30-45 años»— porque un recuento ya ha tirado la
+asociación entre las respuestas de una misma persona.
+
+### Las tres decisiones que de verdad importan
+
+**1. `label` como cabecera, no `text`.** `C-Q15.text` es «Valore de 1 (nada de acuerdo) a 5…», que
+no nombra nada; su `label` es «Valoración de la D.O.». Las cuatro preguntas de precio tienen cuatro
+`text` casi idénticos que en una hoja de cálculo se truncan al mismo prefijo, y `label` «Precio:
+demasiado barato / barato / empieza a ser caro / demasiado caro». `types.ts` ya documentaba `label`
+como «short label for the admin list and CSV headers» y no lo usaba ninguna exportación.
+
+En el fichero de frecuencias van **las dos columnas**, `Pregunta` (el rótulo) y `Enunciado` (el texto
+completo): una identifica y la otra permite interpretar. Esto salió de abrir el fichero, no de los
+tests — con una sola columna la rejilla aparecía como «Valore de 1 a 5…» cinco veces seguidas.
+
+**2. Sí / No / vacío, tres estados.** 15 preguntas de consumidor cuelgan de una sola condición: quien
+contesta que nunca come jamón tiene un cuestionario de 6 preguntas. `Sí` es «lo marcó», `No` es «se
+le preguntó y no lo marcó», y **vacío** es «no se le preguntó». Colapsar los dos últimos habría
+inventado una respuesta negativa para media muestra.
+
+**3. Denominadores por línea, no por pregunta.** Si una versión añade una opción, esa opción solo se
+ofreció a parte de la muestra: contarla sobre el total la hundiría (6 de 12 saldría como 15 %, no
+50 %). Por eso `Preguntados` cuenta a quién se le ofreció *ese* estímulo — esa opción, esa fila de
+rejilla— y no la pregunta entera. Y hay dos columnas, no una: `Preguntados` (se le ofreció) y
+`Respondieron` (contestó algo), con el `%` sobre la segunda, que es el porcentaje válido. Su
+diferencia hace visible la no respuesta, que si no es un hueco que nadie compara.
+
+### Fallos reales corregidos por el camino
+
+- **Los decimales se escribían con punto.** `String(18.5)` da `18.5`, que **Excel en español lee como
+  texto**. Una columna de precios que es texto es una columna que nadie puede promediar, y las cuatro
+  preguntas de precio son el núcleo del estudio. Ahora todo número lleva coma. Hay un test que es una
+  sola regex sobre las dos exportaciones: ninguna celda puede casar con `/^-?\d+\.\d+$/`.
+- **El orden de las columnas dependía de la URL.** Era «primera aparición en `rows`», y `rows` viene
+  ordenado por el parámetro `direction`: el mismo dato producía dos ficheros distintos según el
+  «Sentido» elegido en el panel. Ahora el recorrido que decide el orden es canónico
+  `(version, capturedAt, id)`, nunca el de la consulta.
+- **La columna `Respuestas` no puede llevar medias.** Es la columna que alguien va a sumar y a meter
+  en una tabla dinámica; con un 4,37 dentro todo agregado sobre ella está mal, y además deja de ser
+  numérica para Excel. Los estadísticos van en `Valor`, y la línea `Media` lleva su *n* en
+  `Respuestas`. Hay un test que fija el invariante: toda celda de `Respuestas` casa con `/^\d+$/`.
+- **`openQuestion` no estaba en el snapshot.** Solo el cuestionario de empresas tiene pregunta
+  abierta, así que un `open_answer: null` no distinguía «no se le preguntó» de «no escribió», y el
+  denominador salía inflado con todos los consumidores. Es un campo opcional en una columna JSON: no
+  hay migración, y las filas antiguas caen al respaldo `open_answer !== null`.
+
+### Estructura
+
+`server/exportModel.ts` es nuevo: la espina del cuestionario reconciliada entre versiones, pura, sin
+CSV. La lógica de rejilla estaba **duplicada en cuatro sitios** dentro de `exports.ts`, cada copia
+repitiendo la misma comprobación de nulos; ahora es `scaleRowEntries`. Queda una quinta copia en
+`src/admin/DetailScreen.tsx`, que es cliente y no puede importar de `server/`: se deja, pero su
+respaldo tiene que seguir siendo idéntico o la ficha y el CSV dirán cosas distintas.
+
+`format` pasa de `wide|long` a `matrix|frequency`, y el nombre del fichero dice de quién es. La ruta
+de una sola respuesta (`?id=`) da la matriz haga falta lo que haga falta: una tabla de frecuencias
+sobre un respondente es una columna de unos.
+
+### Comprobado
+
+310 tests, `typecheck`, `lint`, `build` y el detector de diseño en cero. Y las cuatro descargas
+**abiertas de verdad**: BOM y UTF-8 correctos, acentos bien, cero decimales con punto, 58 columnas
+en la matriz de empresas y 50 en la de consumidores, 13 en las dos de frecuencias.
