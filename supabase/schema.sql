@@ -21,9 +21,9 @@ create table if not exists responses (
 create index if not exists responses_created_at_idx      on responses (created_at desc);
 create index if not exists responses_respondent_type_idx on responses (respondent_type);
 
--- Free-text search over the identification blob. Both audiences are anonymous
--- today, so this blob is empty; the index is kept so the admin search keeps
--- working if a field is ever added.
+-- Free-text search over the identification blob. Companies store their name
+-- there, so this is what makes the admin search box useful; consumer rows are
+-- anonymous and leave it empty.
 create extension if not exists pg_trgm;
 create index if not exists responses_identification_idx
   on responses using gin ((identification::text) gin_trgm_ops);
