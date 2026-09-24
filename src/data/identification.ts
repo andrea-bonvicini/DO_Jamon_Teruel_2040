@@ -1,4 +1,4 @@
-import type { AudienceId, Option } from './types'
+import type { AudienceId, Option } from './types.js'
 
 export interface IdentificationField {
   id: string

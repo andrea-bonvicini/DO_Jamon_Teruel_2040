@@ -1,8 +1,8 @@
-import { resolveOptionText, resolveRowText, resolveSnapshot } from '../src/data/snapshot'
-import type { SnapshotQuestion } from '../src/data/snapshot'
-import type { AnswerValue } from '../src/data/types'
-import type { ResponseRow } from './responsesRepository'
-import { toCsv } from './csv'
+import { resolveOptionText, resolveRowText, resolveSnapshot } from '../src/data/snapshot.js'
+import type { SnapshotQuestion } from '../src/data/snapshot.js'
+import type { AnswerValue } from '../src/data/types.js'
+import type { ResponseRow } from './responsesRepository.js'
+import { toCsv } from './csv.js'
 
 /**
  * Both export shapes are pure functions over the rows, and both render from

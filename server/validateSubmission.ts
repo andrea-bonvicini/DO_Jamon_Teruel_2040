@@ -1,6 +1,6 @@
-import { getQuestionnaire } from '../src/data/questionnaires'
-import { IDENTIFICATION } from '../src/data/identification'
-import { visibleQuestions } from '../src/data/visibility'
+import { getQuestionnaire } from '../src/data/questionnaires/index.js'
+import { IDENTIFICATION } from '../src/data/identification.js'
+import { visibleQuestions } from '../src/data/visibility.js'
 import {
   DEFAULT_LONG_TEXT_MAX,
   DEFAULT_SHORT_TEXT_MAX,
@@ -9,9 +9,9 @@ import {
   type Answers,
   type AudienceId,
   type Question,
-} from '../src/data/types'
-import { buildSnapshot } from '../src/data/snapshot'
-import type { QuestionnaireSnapshot } from '../src/data/snapshot'
+} from '../src/data/types.js'
+import { buildSnapshot } from '../src/data/snapshot.js'
+import type { QuestionnaireSnapshot } from '../src/data/snapshot.js'
 
 export interface ValidSubmission {
   audience: AudienceId

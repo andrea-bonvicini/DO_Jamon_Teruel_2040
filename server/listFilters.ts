@@ -1,7 +1,7 @@
-import { isAudienceId } from '../src/data/types'
-import type { AudienceId } from '../src/data/types'
-import { singleParam } from './http'
-import type { ApiRequest } from './http'
+import { isAudienceId } from '../src/data/types.js'
+import type { AudienceId } from '../src/data/types.js'
+import { singleParam } from './http.js'
+import type { ApiRequest } from './http.js'
 
 export interface ListFilters {
   search: string | null

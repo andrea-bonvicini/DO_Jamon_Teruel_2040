@@ -1,7 +1,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
-import { env } from './env'
-import { parseCookies } from './http'
-import type { ApiRequest } from './http'
+import { env } from './env.js'
+import { parseCookies } from './http.js'
+import type { ApiRequest } from './http.js'
 
 export const SESSION_COOKIE = 'do_admin_session'
 const SESSION_DURATION_SECONDS = 10 * 60 * 60 // 10 h

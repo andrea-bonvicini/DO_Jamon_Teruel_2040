@@ -1,4 +1,4 @@
-import type { Answers, Question } from './types'
+import type { Answers, Question } from './types.js'
 
 /**
  * Returns the questions currently applicable, in order.

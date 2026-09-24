@@ -1,4 +1,4 @@
-import type { Questionnaire } from '../types'
+import type { Questionnaire } from '../types.js'
 
 /**
  * Transcribed from `3_Encuesta_Empresas_DO_Jamon_Teruel.docx`

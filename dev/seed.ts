@@ -7,10 +7,10 @@
  * can never be mistaken for a real one in an export. They exist only in the
  * development server — nothing here reaches Supabase or the production build.
  */
-import { QUESTIONNAIRES } from '../src/data/questionnaires'
-import { buildSnapshot } from '../src/data/snapshot'
-import type { Answers } from '../src/data/types'
-import type { ResponseRow } from '../server/responsesRepository'
+import { QUESTIONNAIRES } from '../src/data/questionnaires/index.js'
+import { buildSnapshot } from '../src/data/snapshot.js'
+import type { Answers } from '../src/data/types.js'
+import type { ResponseRow } from '../server/responsesRepository.js'
 
 function gridAll(questionId: string, audience: 'company' | 'individual', value: number) {
   const question = QUESTIONNAIRES[audience].questions.find((q) => q.id === questionId)

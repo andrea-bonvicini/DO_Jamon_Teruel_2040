@@ -427,3 +427,32 @@ contraseña, ni el secreto de sesión, ni la contraseña en claro** aparecen en 
 `.env.example` sí se versiona: es la plantilla y no lleva valores.
 
 Queda pendiente crear el remoto y conectar Vercel, que requiere cuenta.
+
+## 2026-09-24 — Las funciones de Vercel no arrancaban: faltaban las extensiones
+
+Tras el primer despliegue, `/api/*` devolvía `FUNCTION_INVOCATION_FAILED`: un fallo de plataforma,
+no nuestro. Que no saliera el JSON de `withErrorHandling` es el dato clave — **la función se rompía
+al cargar el módulo**, antes de ejecutar ninguna línea nuestra.
+
+Causa: `package.json` declara `"type": "module"`, así que Node aplica las reglas ESM, y **ESM exige
+la extensión explícita** en los import relativos. Los ficheros de `api/`, `server/`, `src/data/` y
+`dev/` importaban sin ella (`'../server/http'`), y además había imports de carpeta
+(`'../src/data/questionnaires'`), que en ESM no existen.
+
+Arreglado en 20 ficheros: extensión `.js` explícita y `/index.js` en los imports de carpeta. Es la
+convención estándar de TypeScript con ESM — se escribe `.js` porque es lo que tendrá el fichero
+compilado. Funciona en los dos escenarios posibles: si Vercel empaqueta con esbuild, éste reescribe
+`.js` a `.ts` al resolver; si compila y ejecuta con Node ESM, la ruta ya es la correcta. Vite y
+Vitest hacen la misma reescritura, así que el entorno local no cambia.
+
+**Aviso honesto**: esto corrige un defecto real y verificado —el código no era ESM válido—, pero no
+he podido confirmar que sea la única causa del fallo en producción, porque no tengo acceso a los
+registros de Vercel. Si tras redesplegar sigue fallando, el registro de la función dirá el error
+exacto en una línea.
+
+### Contraseña del panel
+
+Cambiada a la elegida por el responsable del proyecto. **Reserva planteada**: el comentario de
+`server/auth.ts` justifica usar SHA-256 plano precisamente porque la contraseña era larga y
+aleatoria. Una contraseña corta y con estructura reconocible debilita ese razonamiento, y el
+limitador de peticiones apenas protege en serverless, donde se reinicia en cada instancia fría.

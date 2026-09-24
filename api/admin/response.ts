@@ -1,7 +1,7 @@
-import { methodNotAllowed, singleParam, withErrorHandling } from '../../server/http'
-import type { ApiRequest, ApiResponse } from '../../server/http'
-import { hasValidAdminSession } from '../../server/auth'
-import { getResponse } from '../../server/responsesRepository'
+import { methodNotAllowed, singleParam, withErrorHandling } from '../../server/http.js'
+import type { ApiRequest, ApiResponse } from '../../server/http.js'
+import { hasValidAdminSession } from '../../server/auth.js'
+import { getResponse } from '../../server/responsesRepository.js'
 
 // Ids travel in the QUERY STRING, never as a [dynamic] path segment — see
 // the blueprint's serverless routing pitfalls.

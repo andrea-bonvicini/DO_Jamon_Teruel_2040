@@ -1,10 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { QuestionnaireSnapshot } from '../src/data/snapshot'
-import type { Answers, AudienceId } from '../src/data/types'
-import { createServiceClient } from './supabaseClient'
-import { DEFAULT_LIST_LIMIT, EXPORT_LIMIT } from './listFilters'
-import type { ListFilters } from './listFilters'
-import type { ValidSubmission } from './validateSubmission'
+import type { QuestionnaireSnapshot } from '../src/data/snapshot.js'
+import type { Answers, AudienceId } from '../src/data/types.js'
+import { createServiceClient } from './supabaseClient.js'
+import { DEFAULT_LIST_LIMIT, EXPORT_LIMIT } from './listFilters.js'
+import type { ListFilters } from './listFilters.js'
+import type { ValidSubmission } from './validateSubmission.js'
 
 /** One row as it comes back from Postgres. */
 export interface ResponseRow {

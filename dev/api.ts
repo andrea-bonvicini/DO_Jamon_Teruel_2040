@@ -17,14 +17,14 @@
  * this is not a database.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { hasValidAdminSession, loginCookie, logoutCookie, verifyPassword } from '../server/auth'
-import { attachment } from '../server/csv'
-import { buildLongCsv, buildWideCsv } from '../server/exports'
-import { EXPORT_LIMIT, parseListFilters } from '../server/listFilters'
-import type { ApiRequest } from '../server/http'
-import { validateSubmission } from '../server/validateSubmission'
-import type { ResponseRow } from '../server/responsesRepository'
-import { SEED } from './seed'
+import { hasValidAdminSession, loginCookie, logoutCookie, verifyPassword } from '../server/auth.js'
+import { attachment } from '../server/csv.js'
+import { buildLongCsv, buildWideCsv } from '../server/exports.js'
+import { EXPORT_LIMIT, parseListFilters } from '../server/listFilters.js'
+import type { ApiRequest } from '../server/http.js'
+import { validateSubmission } from '../server/validateSubmission.js'
+import type { ResponseRow } from '../server/responsesRepository.js'
+import { SEED } from './seed.js'
 
 const store: ResponseRow[] = [...SEED]
 

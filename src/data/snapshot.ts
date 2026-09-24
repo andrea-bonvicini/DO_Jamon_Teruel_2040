@@ -1,5 +1,5 @@
-import type { AudienceId, Answers, Questionnaire, QuestionType } from './types'
-import { visibleQuestions } from './visibility'
+import type { AudienceId, Answers, Questionnaire, QuestionType } from './types.js'
+import { visibleQuestions } from './visibility.js'
 
 /**
  * The exact questions and option texts that were shown to one respondent.

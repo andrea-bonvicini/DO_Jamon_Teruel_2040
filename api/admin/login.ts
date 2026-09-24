@@ -1,7 +1,7 @@
-import { clientIp, jsonBody, methodNotAllowed, withErrorHandling } from '../../server/http'
-import type { ApiRequest, ApiResponse } from '../../server/http'
-import { loginCookie, verifyPassword } from '../../server/auth'
-import { checkRateLimit } from '../../server/rateLimit'
+import { clientIp, jsonBody, methodNotAllowed, withErrorHandling } from '../../server/http.js'
+import type { ApiRequest, ApiResponse } from '../../server/http.js'
+import { loginCookie, verifyPassword } from '../../server/auth.js'
+import { checkRateLimit } from '../../server/rateLimit.js'
 
 export default withErrorHandling(async (req: ApiRequest, res: ApiResponse) => {
   if (req.method !== 'POST') return methodNotAllowed(res, 'POST')

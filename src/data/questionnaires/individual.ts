@@ -1,4 +1,4 @@
-import type { Questionnaire, ShowIf } from '../types'
+import type { Questionnaire, ShowIf } from '../types.js'
 
 /**
  * Transcribed from `2_Encuesta_Usuario_Final_DO_Jamon_Teruel.docx`

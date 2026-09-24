@@ -1,6 +1,6 @@
-import type { AudienceId, Questionnaire } from '../types'
-import { COMPANY_QUESTIONNAIRE } from './company'
-import { INDIVIDUAL_QUESTIONNAIRE } from './individual'
+import type { AudienceId, Questionnaire } from '../types.js'
+import { COMPANY_QUESTIONNAIRE } from './company.js'
+import { INDIVIDUAL_QUESTIONNAIRE } from './individual.js'
 
 /** The only place either questionnaire is looked up. */
 export const QUESTIONNAIRES: Record<AudienceId, Questionnaire> = {

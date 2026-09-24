@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { env } from './env'
+import { env } from './env.js'
 
 /**
  * Service-role client. This key bypasses row-level security, so it must never

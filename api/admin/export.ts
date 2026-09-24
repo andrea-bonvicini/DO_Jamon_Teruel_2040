@@ -1,10 +1,10 @@
-import { methodNotAllowed, singleParam, withErrorHandling } from '../../server/http'
-import type { ApiRequest, ApiResponse } from '../../server/http'
-import { hasValidAdminSession } from '../../server/auth'
-import { attachment } from '../../server/csv'
-import { buildLongCsv, buildWideCsv } from '../../server/exports'
-import { EXPORT_LIMIT, parseListFilters } from '../../server/listFilters'
-import { getResponse, listResponsesForExport } from '../../server/responsesRepository'
+import { methodNotAllowed, singleParam, withErrorHandling } from '../../server/http.js'
+import type { ApiRequest, ApiResponse } from '../../server/http.js'
+import { hasValidAdminSession } from '../../server/auth.js'
+import { attachment } from '../../server/csv.js'
+import { buildLongCsv, buildWideCsv } from '../../server/exports.js'
+import { EXPORT_LIMIT, parseListFilters } from '../../server/listFilters.js'
+import { getResponse, listResponsesForExport } from '../../server/responsesRepository.js'
 
 export default withErrorHandling(async (req: ApiRequest, res: ApiResponse) => {
   if (req.method !== 'GET') return methodNotAllowed(res, 'GET')
