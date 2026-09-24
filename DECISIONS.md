@@ -397,3 +397,33 @@ registradas» → login en `/admin` → listado con filtros → CSV ancho (4 fil
 (97 filas, 15 columnas), ambos con BOM UTF-8, separador `;`, CRLF y acentos correctos.
 
 273 tests en verde.
+
+## 2026-09-23 — Revisión visual del panel, unidad en la ficha y limpieza
+
+Al mirar por fin el panel con capturas —hasta ahora solo lo había verificado por API— apareció un
+fallo real: los precios de la batería Van Westendorp se leían como **«9»** y **«16»**, sin el
+`€/kg`. Un número sin unidad es ambiguo para quien lee la respuesta: ¿nueve euros, nueve kilos,
+nueve años?
+
+`SnapshotQuestion` gana un campo `unit`, que `buildSnapshot` rellena para las preguntas de tipo
+`number`. Va en el **snapshot** y no se lee del cuestionario actual, para que una respuesta
+antigua se relea con la unidad con la que se recogió.
+
+**La ficha lo muestra; el CSV no.** Es deliberado: en la exportación la unidad ya está en el
+encabezado de la columna, y concatenarla al valor convertiría una columna numérica en texto, que
+es justo lo que rompe un análisis en Excel o en R.
+
+### Reescalado del logotipo blanco de CIRCE
+
+De 4054 × 2217 y 94 KB a **187 × 102 y 6,1 KB**, tres veces el tamaño al que se muestra (34 px),
+así que sigue nítido en pantallas retina. Se hizo con el canvas de Chrome headless, sin añadir
+ninguna dependencia de imagen al proyecto. `public/` pasa de 135 KB a 52 KB en total, que importa
+en un móvil con datos en una feria.
+
+### Repositorio inicializado
+
+Primer commit con 130 ficheros. Comprobado antes de confirmar que **ni `.env`, ni el hash de la
+contraseña, ni el secreto de sesión, ni la contraseña en claro** aparecen en lo versionado.
+`.env.example` sí se versiona: es la plantilla y no lleva valores.
+
+Queda pendiente crear el remoto y conectar Vercel, que requiere cuenta.
