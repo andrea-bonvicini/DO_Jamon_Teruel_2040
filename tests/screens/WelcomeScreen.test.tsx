@@ -62,6 +62,19 @@ describe('the cover', () => {
     expect(screen.queryByText(/de forma agregada/)).not.toBeInTheDocument()
   })
 
+  it('keeps the marks on cream, off the red field where they would vanish', () => {
+    renderCover()
+    const strip = document.querySelector('.screen__strip')!
+    expect(strip).toContainElement(screen.getByAltText(STRINGS.brand.markJamonAlt))
+    expect(strip).toContainElement(screen.getByAltText(STRINGS.brand.markCerdoAlt))
+    expect(strip).toContainElement(screen.getByAltText(STRINGS.brand.markCirceAlt))
+  })
+
+  it('is one red field, with no cream reading area to separate', () => {
+    renderCover()
+    expect(document.querySelector('.screen')).toHaveAttribute('data-tone', 'panel')
+  })
+
   it('still leads with the questionnaire title and a way in', () => {
     renderCover()
     expect(screen.getByRole('heading', { name: STRINGS.welcome.title })).toBeInTheDocument()

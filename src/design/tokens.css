@@ -110,6 +110,9 @@
 
   /* ─── Layout ─────────────────────────────────────────────────────────── */
   --measure: 34rem;
+  /* Entre la medida de lectura y la del panel: lo que necesitan dos tarjetas
+     una al lado de la otra sin que ninguna quede estrecha ni descomunal. */
+  --measure-mid: 46rem;
   --measure-wide: 64rem;
   --tap-target: 44px;
 

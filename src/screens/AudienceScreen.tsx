@@ -26,6 +26,12 @@ export function AudienceScreen() {
     <Screen
       title={STRINGS.audience.title}
       subtitle={STRINGS.audience.subtitle}
+      /* The fork is not a question with a list of answers: it is two doors.
+         Centring is what costs nothing here — there is no common left edge to
+         lose, because there is no list to run the eye down. */
+      align="center"
+      tone="panel"
+      width="mid"
       actions={
         <Button variant="secondary" onClick={() => dispatch({ type: 'GO_BACK' })}>
           {STRINGS.actions.back}
@@ -37,7 +43,9 @@ export function AudienceScreen() {
           <li key={choice.id}>
             <button
               type="button"
-              className="audience__card"
+              /* `on-page`: a white card inside the red field, so the palette
+                 goes back to ink on cream for everything inside it. */
+              className="audience__card on-page"
               data-selected={state.audience === choice.id || undefined}
               onClick={() => choose(choice.id)}
             >

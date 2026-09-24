@@ -14,8 +14,8 @@ interface ScreenProps {
   actions?: ReactNode
   /** A quiet link rendered under the actions. */
   footer?: ReactNode
-  /** Wider measure for the admin panel and the style guide. */
-  width?: 'default' | 'wide'
+  /** 'mid' fits two cards side by side; 'wide' is the admin panel. */
+  width?: 'default' | 'mid' | 'wide'
   /**
    * Centres the band and the body. For the two bookend screens — the cover
    * and the thank-you — where there is no list to scan and centring reads as
@@ -34,6 +34,18 @@ interface ScreenProps {
    * vertical axis with, which is the reason the measure is shared elsewhere.
    */
   wideTitle?: boolean
+  /**
+   * 'panel' paints the whole page red instead of splitting it into band and
+   * cream answer area. For the two screens with nothing to read against a
+   * light background: the cover and the choice of who is answering.
+   */
+  tone?: 'split' | 'panel'
+  /**
+   * A full-bleed cream strip at the foot, outside the reading measure. The
+   * cover puts the three marks there: they are red and pink on transparent
+   * and need a light surface to be seen at all.
+   */
+  strip?: ReactNode
 }
 
 /**
@@ -61,12 +73,15 @@ export function Screen({
   align = 'start',
   showPartner = true,
   wideTitle = false,
+  tone = 'split',
+  strip,
 }: ScreenProps) {
   return (
     <div
       className="screen"
       data-width={width}
       data-align={align}
+      data-tone={tone}
       data-title={wideTitle ? 'wide' : undefined}
     >
       <div className="screen__panel">
@@ -105,6 +120,10 @@ export function Screen({
           </div>
         )}
       </div>
+
+      {/* `on-page` puts the cream palette back: inside a red field the
+          inherited tokens would paint cream on cream. */}
+      {strip && <div className="screen__strip on-page">{strip}</div>}
     </div>
   )
 }

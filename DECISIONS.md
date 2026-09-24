@@ -507,3 +507,62 @@ parecía desbordarse, pero era el recorte de la ventana del navegador.
 
 Queda comprobar en producción que los recuentos coinciden con Supabase y que cada CSV trae solo su
 público.
+
+## 2026-09-24 — La portada y la bifurcación pasan a ser un campo rojo entero
+
+Las dos primeras pantallas no piden nada que haya que leer sobre fondo claro: la portada muestra
+un título y una puerta de entrada, y la bifurcación son dos puertas. Partirlas en banda granate +
+área crema era trazar una línea divisoria entre un encabezado y nada.
+
+Ahora el granate ocupa toda la página en esas dos, y lo que necesita superficie clara la trae
+consigo: en la portada, una franja crema a pie de página con las tres marcas; en la bifurcación,
+dos tarjetas blancas.
+
+### El shell, no cada pantalla
+
+Dos propiedades nuevas en `Screen`, no dos maquetaciones paralelas:
+
+- **`tone="panel"`** pinta la página entera con el granate en vez de partirla. La paleta invertida
+  —que antes vivía solo en `.screen__panel`— pasa a compartirse entre la banda y el campo completo,
+  así que `Logo`, `ProgressBar` y los encabezados siguen sin saber nada del asunto.
+- **`strip`** es una franja a sangre al pie, fuera de la medida de lectura: es un pie de marcas, no
+  un párrafo.
+
+Y su contrapartida, **`.on-page`**: la paleta invertida se hereda hacia dentro, así que una tarjeta
+blanca o una franja crema colocadas *encima* del campo rojo pintarían texto crema sobre blanco. Esa
+clase devuelve la paleta de página a su subárbol. Está probada, porque es el tipo de fallo que no
+da error en ninguna parte: simplemente desaparece el texto.
+
+### Detalles que solo se ven mirándolo
+
+- **El botón sobre el granate**: `--color-on-accent` pasa a ser granate dentro del campo, así que
+  «Comenzar» sale crema con texto granate — los mismos 8,4:1 de siempre, al revés. Sin eso, el botón
+  habría salido crema sobre crema. La sombra del botón pasa a tinta: una sombra vino sobre un campo
+  vino no es una sombra.
+- **Centrado vertical**: nada se estira para rellenar el campo. El bloque queda entero y dos
+  márgenes automáticos reparten el hueco por arriba y por abajo. Con franja, el margen de abajo es
+  el de la franja, que así queda pegada al pie. Hubo que quitar antes el `flex: 1`, porque el
+  crecimiento se come el espacio libre y los márgenes automáticos ya no ven nada que repartir.
+- **La marca de CIRCE en las pantallas centradas** se saca del flujo y se ancla al extremo. Antes,
+  centrar la fila centraba *la pareja*, así que el logotipo quedaba apelmazado contra el rótulo en
+  vez de al borde. Se arregla también la pantalla de agradecimiento, donde pasaba lo mismo.
+- **Las dos tarjetas van una al lado de otra**, no apiladas: son alternativas del mismo rango, y una
+  lista vertical se lee como un orden de preferencia que aquí no existe. Se apilan por debajo de
+  34 rem, donde dos columnas dejarían cada tarjeta demasiado estrecha para su propia etiqueta.
+- **Medida nueva, `--measure-mid` (46 rem)**: la de lectura deja las dos tarjetas estrechas y la del
+  panel las deja descomunales.
+- `--progress-track` sustituye al truco de redefinir `--color-cream-200` dentro de la banda. Era
+  sombrear un color de la escala para conseguir un efecto; ahora la barra tiene su propio token,
+  igual que ya tenía `--progress-fill`. Además evitaba que `.on-page` pudiera restaurarlo sin
+  duplicar un valor en crudo.
+
+### Comprobado
+
+294 tests, `typecheck`, `lint`, `build` y el detector de diseño (0 hallazgos). Capturas a 1440 px de
+portada, bifurcación, pregunta y agradecimiento: las pantallas partidas siguen intactas y la barra
+de progreso conserva su carril. A 390 px, medido en el DOM: `scrollWidth` del documento = 390 en
+las dos pantallas nuevas, las tarjetas se apilan y la franja de marcas cabe en una fila. Las
+capturas a 390 px parecían desbordarse otra vez; era el recorte mínimo de la ventana del navegador,
+no el diseño.
+
+No se ha tocado ni una pregunta, ni un texto, ni una opción de respuesta.

@@ -13,8 +13,15 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  /* Base colour separate from the gradient: it is the colour the band's text
-     is actually read against, and the fallback if the gradient never paints. */
+}
+
+/* The red field and the palette that goes with it. The band wears it on the
+   ordinary screens; `data-tone="panel"` gives it to the whole page instead,
+   for the two screens that have no answer area to separate it from. */
+.screen__panel,
+.screen[data-tone='panel'] {
+  /* Base colour separate from the gradient: it is the colour the text is
+     actually read against, and the fallback if the gradient never paints. */
   background-color: var(--color-panel);
   background-image:
     radial-gradient(90% 140% at 6% 0%, #8a2749 0%, rgba(138, 39, 73, 0) 62%),
@@ -25,13 +32,36 @@
   --color-text-muted: var(--color-panel-muted);
   --color-accent: var(--color-on-panel);
   --color-accent-hover: var(--color-panel-muted);
+  /* A cream button on red: the same 8,4:1 as red on cream, reversed. */
+  --color-on-accent: var(--color-panel);
+  --color-accent-soft: var(--color-panel-track);
   --color-border: var(--color-panel-border);
   --color-border-strong: var(--color-panel-muted);
-  --color-cream-200: var(--color-panel-track); /* the ProgressBar track */
+  --progress-track: var(--color-panel-track);
   --progress-fill: var(--color-panel-fill);
   --color-focus: var(--color-cream-50);
+  /* Ink, not wine: a wine shadow on a wine field is not a shadow. */
+  --shadow-button: 0 1px 2px rgb(40 12 22 / 0.28), 0 6px 16px rgb(40 12 22 / 0.2);
 
   color: var(--color-on-panel);
+}
+
+/* The counterpart of that inversion. A light surface laid back on top of the
+   red field — a card, the strip of marks — would otherwise inherit cream text
+   and paint it on white. This puts the page palette back for its subtree. */
+.on-page {
+  --color-heading: var(--color-wine-900);
+  --color-text: var(--color-ink);
+  --color-text-muted: var(--color-muted);
+  --color-accent: var(--color-wine-700);
+  --color-accent-hover: var(--color-wine-500);
+  --color-on-accent: var(--color-cream-50);
+  --color-accent-soft: var(--color-wine-100);
+  --color-border: var(--color-cream-300);
+  --color-border-strong: var(--color-wine-300);
+  --color-focus: var(--color-wine-500);
+
+  color: var(--color-text);
 }
 
 /* The one gold accent edge, at 1px, along the foot of the band. */
@@ -61,6 +91,12 @@
   max-inline-size: var(--measure);
   margin-inline: auto;
   padding-inline: var(--space-5);
+}
+
+.screen[data-width='mid'] .screen__panel-inner,
+.screen[data-width='mid'] .screen__main,
+.screen[data-width='mid'] .screen__footer {
+  max-inline-size: var(--measure-mid);
 }
 
 .screen[data-width='wide'] .screen__panel-inner,
@@ -124,10 +160,20 @@
   text-align: center;
 }
 
-/* On the bookends the wordmark centres rather than hugging the left edge. */
+/* On the centred screens the wordmark sits in the true middle of the band,
+   so the partner mark is taken out of the flow instead of being packed up
+   against it — otherwise centring the row centres the pair, not the mark. */
 .screen[data-align='center'] .screen__brand {
+  position: relative;
   justify-content: center;
   text-align: center;
+}
+
+.screen[data-align='center'] .screen__partner {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block: 0;
+  margin-block: auto;
 }
 
 .screen[data-align='center'] .screen__title,
@@ -207,6 +253,73 @@
 .screen__footer-extra {
   display: flex;
   justify-content: center;
+}
+
+/* ─── One red field: the cover and the fork ───────────────────────────────
+   Two screens ask nothing of the respondent that needs a light reading area:
+   the cover, and the choice of who is answering. Splitting them into band +
+   cream would be drawing a dividing line between a heading and nothing. They
+   paint the whole field red, and whatever sits on it brings its own surface. */
+.screen[data-tone='panel'] .screen__panel {
+  background: none;
+}
+
+/* The gold hairline marked the seam between the two areas. There is no seam. */
+.screen[data-tone='panel'] .screen__panel::after {
+  content: none;
+}
+
+.screen[data-tone='panel'] .screen__content,
+.screen[data-tone='panel'] .screen__footer {
+  background: transparent;
+}
+
+/* Nothing scrolls under the actions here, so a sticky bar with a border and a
+   fade above it would be announcing more content that does not exist. */
+.screen[data-tone='panel'] .screen__footer {
+  position: static;
+  border-block-start: 0;
+}
+
+.screen[data-tone='panel'] .screen__footer::before {
+  content: none;
+}
+
+/* The cover has no body, and an empty <main> must not leave its padding
+   behind as a gap between the title and the way in. */
+.screen[data-tone='panel'] .screen__main:empty {
+  padding-block: 0;
+}
+
+/* Nothing stretches to fill the field: the heading, the body and the actions
+   stay one block, and a pair of auto margins splits the free space above and
+   below it. That is what keeps the group in the middle instead of pinning the
+   heading to the top and the actions to the foot of a tall empty red page.
+   Flex growth has to go first, or it would eat the space before the margins
+   ever see it. */
+.screen[data-tone='panel'] .screen__content,
+.screen[data-tone='panel'] .screen__main {
+  flex: 0 0 auto;
+}
+
+.screen[data-tone='panel'] .screen__panel {
+  margin-block-start: auto;
+}
+
+/* With a strip, the lower margin is the strip's own, which pins it to the
+   foot. Without one, the content carries it. */
+.screen[data-tone='panel']:not(:has(.screen__strip)) .screen__content {
+  margin-block-end: auto;
+}
+
+/* ─── The full-bleed strip ───────────────────────────────────────────────
+   Outside the reading measure on purpose: it is a footer of marks, not a
+   paragraph. Cream, because the Teruel logotypes are red and pink on
+   transparent and would all but vanish on the field above it. */
+.screen__strip {
+  margin-block-start: auto;
+  background: var(--color-page);
+  padding-inline: var(--space-5);
 }
 
 @media (min-width: 40rem) {

@@ -206,6 +206,52 @@ describe('the partner mark', () => {
   })
 })
 
+describe('the red field', () => {
+  it('splits the page into band and answer area by default', () => {
+    render(<Screen title="T">body</Screen>)
+    expect(shell()).toHaveAttribute('data-tone', 'split')
+  })
+
+  it('can paint the whole page instead, for the screens with no answer area', () => {
+    render(
+      <Screen title="T" tone="panel">
+        body
+      </Screen>,
+    )
+    expect(shell()).toHaveAttribute('data-tone', 'panel')
+  })
+})
+
+describe('the strip', () => {
+  it('is left out when nothing is given for it', () => {
+    render(<Screen title="T">body</Screen>)
+    expect(document.querySelector('.screen__strip')).not.toBeInTheDocument()
+  })
+
+  it('sits outside the reading measure, not inside the answer area', () => {
+    render(
+      <Screen title="T" strip={<img alt="una marca" src="/m.png" />}>
+        body
+      </Screen>,
+    )
+
+    const mark = screen.getByAltText('una marca')
+    expect(document.querySelector('.screen__strip')).toContainElement(mark)
+    expect(content()).not.toContainElement(mark)
+    expect(panel()).not.toContainElement(mark)
+  })
+
+  it('puts the page palette back, so a light surface inside a red field reads', () => {
+    render(
+      <Screen title="T" tone="panel" strip={<span>marcas</span>}>
+        body
+      </Screen>,
+    )
+    // Without this the inherited cream text would be painted on cream.
+    expect(document.querySelector('.screen__strip')).toHaveClass('on-page')
+  })
+})
+
 describe('the cover title', () => {
   it('is capped to the reading measure by default', () => {
     render(<Screen title="Tipo de actividad principal">body</Screen>)

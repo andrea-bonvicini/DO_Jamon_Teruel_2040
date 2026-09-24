@@ -7,7 +7,7 @@
 .progress__track {
   block-size: 6px;
   inline-size: 100%;
-  background: var(--color-cream-200);
+  background: var(--progress-track, var(--color-cream-200));
   border-radius: var(--radius-pill);
   overflow: hidden;
 }

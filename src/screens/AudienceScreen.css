@@ -1,27 +1,41 @@
+/* Two doors side by side on the red field. Side by side rather than stacked
+   because they are alternatives of equal standing: a vertical list reads as
+   an order of preference, and there is none here. They stack below 34rem,
+   where two columns would leave each card too narrow for its own label. */
 .audience {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: var(--space-4);
 }
 
+@media (min-width: 34rem) {
+  .audience {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+}
+
+/* The card is the light surface, so it keeps the shadow restrained: it is
+   already lifted off the field by being white on red. */
 .audience__card {
   inline-size: 100%;
+  block-size: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  text-align: start;
-  padding: var(--space-5);
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  padding: var(--space-6) var(--space-5);
   background: var(--color-surface);
-  border: var(--border-hairline) solid var(--color-border);
+  border: var(--border-hairline) solid transparent;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-raised);
   cursor: pointer;
   transition:
     border-color var(--duration-fast) var(--ease),
-    background-color var(--duration-fast) var(--ease),
     box-shadow var(--duration-fast) var(--ease),
     transform var(--duration-fast) var(--ease);
 }
@@ -29,15 +43,27 @@
 .audience__card:hover,
 .audience__card[data-selected] {
   border-color: var(--color-accent-hover);
-  background: var(--color-accent-soft);
   box-shadow: var(--shadow-selected);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
+/* The icon sits in a soft tile rather than loose on the card: it gives the
+   mark a defined size and keeps the two cards optically identical whatever
+   the drawing inside. */
 .audience__icon {
-  inline-size: 2.4rem;
-  block-size: 2.4rem;
+  flex: none;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-soft);
   color: var(--color-accent);
+}
+
+.audience__icon .icon {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
 }
 
 .audience__text {
@@ -46,4 +72,5 @@
   color: var(--color-heading);
   font-family: var(--font-display);
   line-height: 1.25;
+  text-wrap: balance;
 }

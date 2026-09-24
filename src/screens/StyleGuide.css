@@ -75,7 +75,7 @@
   --color-text: var(--color-on-panel);
   --color-text-muted: var(--color-panel-muted);
   --color-accent: var(--color-on-panel);
-  --color-cream-200: var(--color-panel-track);
+  --progress-track: var(--color-panel-track);
   --color-focus: var(--color-cream-50);
 
   color: var(--color-on-panel);
