@@ -40,15 +40,14 @@ export const STRINGS = {
 
   identification: {
     title: 'Antes de empezar',
-    subtitle: 'Necesitamos su conformidad para tratar las respuestas.',
-    privacyLabel: 'He leído y acepto el tratamiento de mis respuestas.',
+    subtitle: 'Cómo se tratan sus respuestas.',
     // Two notices, because the two audiences are not treated alike: the
     // consumer survey is anonymous, the company census is not.
     privacyNoticeIndividual:
       'Las respuestas se recogen de forma anónima: no se solicita ni se almacena ningún dato que permita identificarle. Se tratarán de forma agregada con fines de estudio del sector, conforme al Reglamento (UE) 2016/679 (RGPD).',
     privacyNoticeCompany:
       'Se registra el nombre de la empresa para poder depurar el censo del sector y evitar duplicados. Las respuestas se tratarán de forma confidencial y se publicarán únicamente de forma agregada, sin identificar a ninguna empresa. No se recogen datos personales de la persona que responde. Tratamiento conforme al Reglamento (UE) 2016/679 (RGPD).',
-    privacyRequired: 'Debe aceptar el tratamiento de las respuestas para continuar.',
+    fieldRequired: 'Complete los datos marcados para continuar.',
   },
 
   question: {

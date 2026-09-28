@@ -11,7 +11,6 @@ export interface State {
   startedAt: string
   audience: AudienceId | null
   identification: Record<string, string | number>
-  privacyAccepted: boolean
   answers: Answers
   openAnswer: string
   stepIndex: number
@@ -21,7 +20,6 @@ export interface State {
 export type Action =
   | { type: 'SET_AUDIENCE'; audience: AudienceId }
   | { type: 'SET_IDENTIFICATION_FIELD'; field: string; value: string | number }
-  | { type: 'SET_PRIVACY_ACCEPTED'; accepted: boolean }
   | { type: 'SET_ANSWER'; questionId: string; value: AnswerValue | null }
   | { type: 'SET_OPEN_ANSWER'; value: string }
   | { type: 'GO_NEXT'; stepCount: number }
@@ -34,7 +32,6 @@ export const INITIAL_STATE: State = {
   startedAt: new Date().toISOString(),
   audience: null,
   identification: {},
-  privacyAccepted: false,
   answers: {},
   openAnswer: '',
   stepIndex: 0,
@@ -55,9 +52,6 @@ export function reducer(state: State, action: Action): State {
         ...state,
         identification: { ...state.identification, [action.field]: action.value },
       }
-
-    case 'SET_PRIVACY_ACCEPTED':
-      return { ...state, privacyAccepted: action.accepted }
 
     case 'SET_ANSWER': {
       const answers = { ...state.answers }

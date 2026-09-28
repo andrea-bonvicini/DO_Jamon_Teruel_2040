@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '../components/Button'
 import { Screen } from '../components/Screen'
 import { Select } from '../components/Select'
@@ -14,13 +14,13 @@ import './IdentificationScreen.css'
 export function IdentificationScreen() {
   const { state, dispatch, steps } = useQuestionnaire()
   const [showError, setShowError] = useState(false)
-  const consentId = useId()
 
   const fields = state.audience ? IDENTIFICATION[state.audience] : []
-  const fieldsComplete = fields.every(
+  // Nothing to accept any more: the notice informs, it does not ask. What
+  // still holds the respondent here is a required field — the company name.
+  const canContinue = fields.every(
     (field) => !field.required || String(state.identification[field.id] ?? '').trim() !== '',
   )
-  const canContinue = state.privacyAccepted && fieldsComplete
 
   function next() {
     if (!canContinue) {
@@ -50,30 +50,19 @@ export function IdentificationScreen() {
         <IdentificationInput key={field.id} field={field} />
       ))}
 
-      <StatusMessage tone="info" live={false}>
-        {/* Companies are named, consumers are not — the promise differs. */}
-        {state.audience === 'company'
-          ? STRINGS.identification.privacyNoticeCompany
-          : STRINGS.identification.privacyNoticeIndividual}
-      </StatusMessage>
+      {/* Informing is still required (art. 13 RGPD) even though nothing is
+          being asked for, so the notice stays and only the tick box goes.
+          Companies are named, consumers are not — the promise differs. */}
+      <div className="privacy">
+        <StatusMessage tone="info" live={false}>
+          {state.audience === 'company'
+            ? STRINGS.identification.privacyNoticeCompany
+            : STRINGS.identification.privacyNoticeIndividual}
+        </StatusMessage>
+      </div>
 
-      <label className="consent" htmlFor={consentId} data-checked={state.privacyAccepted || undefined}>
-        <input
-          id={consentId}
-          className="consent__input"
-          type="checkbox"
-          checked={state.privacyAccepted}
-          onChange={(event) => {
-            dispatch({ type: 'SET_PRIVACY_ACCEPTED', accepted: event.target.checked })
-            if (event.target.checked) setShowError(false)
-          }}
-        />
-        <span className="consent__marker" aria-hidden="true" />
-        <span>{STRINGS.identification.privacyLabel}</span>
-      </label>
-
-      {showError && !state.privacyAccepted && (
-        <StatusMessage tone="error">{STRINGS.identification.privacyRequired}</StatusMessage>
+      {showError && !canContinue && (
+        <StatusMessage tone="error">{STRINGS.identification.fieldRequired}</StatusMessage>
       )}
     </Screen>
   )

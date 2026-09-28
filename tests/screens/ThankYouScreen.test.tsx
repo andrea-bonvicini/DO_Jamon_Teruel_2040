@@ -18,7 +18,6 @@ const next = () => screen.getByRole('button', { name: STRINGS.actions.next })
 async function reachThankYou(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: STRINGS.actions.start }))
   await user.click(screen.getByRole('button', { name: /consumidor/i }))
-  await user.click(screen.getByRole('checkbox', { name: STRINGS.identification.privacyLabel }))
   await user.click(next())
   await user.click(screen.getByRole('radio', { name: '30–44' }))
   await user.click(next())
@@ -162,8 +161,7 @@ describe('submission', () => {
     await user.click(screen.getByRole('button', { name: STRINGS.actions.start }))
     await user.click(screen.getByRole('button', { name: /empresa del sector/i }))
     await user.type(screen.getByLabelText('Nombre de la empresa'), 'Jamones de prueba, S.L.')
-    await user.click(screen.getByRole('checkbox', { name: STRINGS.identification.privacyLabel }))
-
+  
     expect(STRINGS.thankYou.sentDetailCompany).toMatch(/confidencial/)
     expect(STRINGS.thankYou.sentDetailCompany).not.toMatch(/anónima/)
     expect(STRINGS.thankYou.sentDetailIndividual).toMatch(/anónima/)

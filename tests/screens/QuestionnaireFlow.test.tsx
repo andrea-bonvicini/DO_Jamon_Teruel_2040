@@ -27,7 +27,6 @@ async function startAs(user: ReturnType<typeof userEvent.setup>, audience: 'comp
   if (audience === 'company') {
     await user.type(screen.getByLabelText('Nombre de la empresa'), 'Secaderos de Teruel S.L.')
   }
-  await user.click(screen.getByRole('checkbox', { name: STRINGS.identification.privacyLabel }))
   await user.click(next())
 }
 
@@ -50,14 +49,16 @@ describe('the respondent flow', () => {
     expect(screen.queryByText(/Duración/i)).not.toBeInTheDocument()
   })
 
-  it('blocks the identification step until consent is given', async () => {
+  it('informs the consumer without asking them to accept anything', async () => {
     const user = userEvent.setup()
     render(<QuestionnaireFlow />)
     await user.click(screen.getByRole('button', { name: STRINGS.actions.start }))
     await user.click(screen.getByRole('button', { name: /consumidor/i }))
 
-    expect(next()).toBeDisabled()
-    await user.click(screen.getByRole('checkbox', { name: STRINGS.identification.privacyLabel }))
+    // Informing is still an obligation; asking for consent is no longer the
+    // basis, so there is nothing to tick and nothing holding them back.
+    expect(screen.getByText(/de forma anónima/)).toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     expect(next()).toBeEnabled()
   })
 
@@ -81,8 +82,8 @@ describe('the respondent flow', () => {
     const field = screen.getByLabelText('Nombre de la empresa')
     expect(field).toBeInTheDocument()
 
-    // Consent alone is no longer enough for a company.
-    await user.click(screen.getByRole('checkbox', { name: STRINGS.identification.privacyLabel }))
+    // The company name is what holds them here now, and it still does.
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     expect(next()).toBeDisabled()
 
     await user.type(field, 'Secaderos de Teruel S.L.')

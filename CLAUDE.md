@@ -42,6 +42,11 @@ These are binding for every change in this repository. They come from
     anonymity. Both `privacyNoticeCompany` and `sentDetailCompany` in `src/data/strings.ts` carry
     that wording; if you add a field that identifies someone, update the matching notice in the
     same commit.
+- **There is no consent checkbox** (removed 2026-09-30 at the project owner's request). The
+  processing runs on legitimate interest, not consent. The privacy notice is therefore the ONLY
+  privacy communication the respondent gets: it must stay on screen, in full, on both
+  identification screens. Do not shrink it further, do not fade it, do not collapse it behind a
+  link.
 - Bump the `version` string in a questionnaire file on **every** content change.
 - `dev/` holds a development-only in-memory backend. It must never be imported from `src/` or
   `api/` — `tests/guards/dev-isolation.test.ts` enforces it.

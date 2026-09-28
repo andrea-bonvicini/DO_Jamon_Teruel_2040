@@ -139,7 +139,6 @@ describe('reducer', () => {
 
   it('RESET returns the initial state and nothing else', () => {
     let state = reducer(INITIAL_STATE, { type: 'SET_AUDIENCE', audience: 'company' })
-    state = reducer(state, { type: 'SET_PRIVACY_ACCEPTED', accepted: true })
     state = reducer(state, { type: 'SET_OPEN_ANSWER', value: 'algo' })
     state = reducer(state, { type: 'GO_NEXT', stepCount: 9 })
     state = reducer(state, { type: 'SET_SUBMISSION', status: 'sent' })

@@ -932,3 +932,26 @@ de la rejilla del consumidor se quedó **sin número**, como la rejilla a la que
 Conviene tenerlo presente: al hablar con el Consejo, «pregunta 12» puede significar dos preguntas
 distintas según se mire el documento o la aplicación. Las enmiendas del 28/09 se verificaron **por
 contenido**, no por número, precisamente por esto.
+
+## 2026-09-30 — Fuera la casilla de consentimiento; el aviso se queda
+
+A petición del responsable del proyecto, las dos pantallas de identificación dejan de pedir que se
+marque una casilla. El aviso de privacidad **sigue mostrándose entero** y en tamaño menor.
+
+**Esto cambia la base jurídica, no solo la interfaz**, y quedó advertido antes de hacerlo: se pasa
+de tratar por consentimiento a tratar por interés legítimo. Para consumidores es casi indiferente
+—la respuesta es anónima, no hay dato personal que consentir—; para empresas se recoge el nombre de
+la empresa, que no es dato personal por tratarse de persona jurídica, salvo en un autónomo. La
+obligación de **informar** (art. 13 RGPD) no desaparece al quitar la casilla, y por eso el aviso se
+conserva. Queda pendiente de confirmación por quien lleve protección de datos.
+
+Dos decisiones de detalle:
+
+- **Más pequeño, pero no más tenue.** El primer intento lo dejó además en gris apagado. Reducir
+  tamaño y contraste a la vez, en el único aviso de privacidad que ya queda, es debilitarlo dos
+  veces por una sola petición. Se queda a `--text-xs` con tinta plena: 12:1 sobre la crema.
+- **Se borra el estado `privacyAccepted` y su acción.** Una bandera que ya no escribe nadie no es
+  inofensiva: es una condición que parece significar algo y siempre vale `false`.
+
+`CLAUDE.md` recoge ahora que el aviso es la única comunicación de privacidad que recibe quien
+responde, para que a nadie le parezca luego un adorno que se puede plegar tras un enlace.
