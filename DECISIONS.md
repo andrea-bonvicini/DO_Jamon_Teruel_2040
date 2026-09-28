@@ -900,3 +900,35 @@ cuando los cortes son distintos.
 **`npm run export` no funciona todavía desde esta máquina**: `SUPABASE_URL` y
 `SUPABASE_SERVICE_ROLE_KEY` están **vacías** en el `.env` local —solo se configuraron en Vercel— y
 la orden avisa de ello y se detiene. Los constructores sí están verificados, a través del panel.
+
+## 2026-09-30 — Los dos .docx recogen las enmiendas; fuera la lista de excepciones
+
+Las 29 enmiendas del 28/09 ya están en los documentos fuente, así que la lista temporal que las
+cubría se ha borrado y **la comprobación de fidelidad vuelve a ser total, sin excepciones**. Fue el
+propio test de obsolescencia el que avisó: falló en las 29 entradas a la vez, que es justo lo que
+tenía que hacer cuando llegaran los documentos.
+
+Los `.docx` se editaron programáticamente sobre `word/document.xml`, clonando los párrafos que ya
+existían para conservar el formato —casillas, colores, sangrías— y escribiendo el zip de nuevo. Las
+notas internas «→ Qué buscamos» quedan intactas. Los originales estaban en git, así que cada intento
+fallido se revirtió sin pérdida.
+
+### Una discrepancia de numeración que había que descubrir mirando
+
+Los documentos **no numeran las rejillas Likert**, así que a partir del bloque 5 su secuencia va una
+por detrás de los identificadores del código:
+
+| | Documento | Código |
+| --- | --- | --- |
+| Amenazas 2040 | 15 | `C-Q16` |
+| Oportunidades 2040 | 16 | `C-Q17` |
+| Precios (consumidor) | 9 a 12 | `I-Q10` a `I-Q13` |
+
+Las preguntas nuevas se numeran **según el documento** (`15b`, `16b`, `11b`), porque quien lo lee
+sigue esa secuencia; los identificadores del código no cambian. El primer intento las etiquetó según
+el código y produjo un «16b» detrás de la pregunta 15, que se leía como una errata. Y el seguimiento
+de la rejilla del consumidor se quedó **sin número**, como la rejilla a la que acompaña.
+
+Conviene tenerlo presente: al hablar con el Consejo, «pregunta 12» puede significar dos preguntas
+distintas según se mire el documento o la aplicación. Las enmiendas del 28/09 se verificaron **por
+contenido**, no por número, precisamente por esto.
