@@ -232,6 +232,40 @@ describe('POST /api/admin/login', () => {
     expect(captured.statusCode).toBe(401)
   })
 
+  it('never locks out the person who knows the password', async () => {
+    // The bug this replaces: a correct login spent an attempt too, so an
+    // admin checking the panel a dozen times in a morning locked themselves
+    // out of their own results with a 429.
+    const headers = { 'x-forwarded-for': '198.51.100.21' }
+
+    for (let i = 0; i < 25; i += 1) {
+      const { res, captured } = mockResponse()
+      await postLogin({ method: 'POST', headers, body: { password: PASSWORD } }, res)
+      expect(captured.statusCode, `intento ${i + 1}`).toBe(200)
+    }
+  })
+
+  it('forgives the failed attempts once the right password arrives', async () => {
+    const headers = { 'x-forwarded-for': '198.51.100.22' }
+
+    for (let i = 0; i < 9; i += 1) {
+      const { res } = mockResponse()
+      await postLogin({ method: 'POST', headers, body: { password: 'nope' } }, res)
+    }
+
+    const good = mockResponse()
+    await postLogin({ method: 'POST', headers, body: { password: PASSWORD } }, good.res)
+    expect(good.captured.statusCode).toBe(200)
+
+    // A couple of typos before getting it right must not count against the
+    // next nine guesses either.
+    for (let i = 0; i < 9; i += 1) {
+      const { res, captured } = mockResponse()
+      await postLogin({ method: 'POST', headers, body: { password: 'nope' } }, res)
+      expect(captured.statusCode, `tras acertar, intento ${i + 1}`).toBe(401)
+    }
+  })
+
   it('rate-limits repeated attempts', async () => {
     const headers = { 'x-forwarded-for': '198.51.100.7' }
     for (let i = 0; i < 10; i += 1) {
