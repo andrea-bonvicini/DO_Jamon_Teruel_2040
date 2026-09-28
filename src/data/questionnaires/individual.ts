@@ -12,6 +12,11 @@ import type { Questionnaire, ShowIf } from '../types.js'
  * a conditional rather than an early-exit step: every question from 7 onwards
  * carries CONSUMES_JAMON, so a respondent who answers "Nunca" goes straight to
  * the thank-you screen. See DECISIONS.md.
+ *
+ * Amended on 2026-09-28 at the Consejo's request. The follow-up questions
+ * whose id ends in `b` hang off their own parent, which in turn hangs off
+ * I-Q06 — so they stay hidden for anybody who never eats jamón, without
+ * having to repeat the gate.
  */
 const CONSUMES_JAMON: ShowIf = {
   questionId: 'I-Q06',
@@ -46,7 +51,7 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
   name: 'Cuestionario al consumidor',
   description: 'Unas preguntas sobre su consumo, su percepción y su conocimiento del jamón curado.',
   estimatedDuration: '5–7 min',
-  version: 'individual@1.0.0',
+  version: 'individual@1.1.0',
 
   sections: [
     { id: 'clasificacion', order: 1, name: 'Bloque A · Clasificación' },
@@ -158,9 +163,23 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       options: [
         { id: 'diario', text: 'A diario / comida habitual' },
         { id: 'aperitivo', text: 'Aperitivo o picoteo' },
+        { id: 'merienda', text: 'Como merienda o almuerzo, no a diario' },
         { id: 'celebraciones', text: 'Celebraciones' },
         { id: 'regalo', text: 'Como regalo' },
+        { id: 'otras', text: 'Otras' },
       ],
+    },
+    {
+      id: 'I-Q07b',
+      sectionId: 'consumo',
+      label: 'Otras ocasiones',
+      text: '¿En qué otras ocasiones?',
+      type: 'short_text',
+      required: false,
+      maxLength: 300,
+      // Hangs off its own parent, which hangs off I-Q06: the gate chains by
+      // itself, because a hidden question has no answer to match against.
+      showIf: { questionId: 'I-Q07', optionIds: ['otras'] },
     },
     {
       id: 'I-Q08',
@@ -204,11 +223,24 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
         { id: 'alimentacion', text: 'Alimentación del cerdo' },
         { id: 'curacion', text: 'Tiempo de curación' },
         { id: 'aspecto', text: 'Aspecto y grasa infiltrada' },
-        { id: 'salud', text: 'Salud (sal, aditivos)' },
+        { id: 'salud', text: 'Composición' },
         { id: 'formato', text: 'Formato y comodidad' },
         { id: 'sostenibilidad', text: 'Sostenibilidad ambiental' },
         { id: 'local', text: 'Que sea producto local/español' },
       ],
+    },
+    {
+      id: 'I-Q09b',
+      sectionId: 'valoracion',
+      label: 'Otro factor importante',
+      text: '¿Hay algún otro factor importante para usted?',
+      // A question rather than an extra grid row: nobody can rate «otros»
+      // from 1 to 5 without first saying what it is.
+      help: 'Opcional.',
+      type: 'short_text',
+      required: false,
+      maxLength: 300,
+      showIf: CONSUMES_JAMON,
     },
 
     // ─── Bloque D · Disposición a pagar (Van Westendorp) ───────────────────
@@ -216,7 +248,7 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       id: 'I-Q10',
       sectionId: 'precio',
       label: 'Precio: demasiado barato',
-      text: '¿A qué precio le parecería tan barato que dudaría de su calidad?',
+      text: '¿Qué precio le parecería tan barato que dudaría de su calidad?',
       help: 'Referencia: un jamón curado con Denominación de Origen, pieza de calidad media-alta.',
       type: 'number',
       required: true,
@@ -228,8 +260,8 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
     {
       id: 'I-Q11',
       sectionId: 'precio',
-      label: 'Precio: barato',
-      text: '¿A qué precio le parecería barato / buena oportunidad?',
+      label: 'Precio: buena oportunidad',
+      text: '¿Qué precio le parecería una buena oportunidad?',
       help: 'Referencia: un jamón curado con Denominación de Origen, pieza de calidad media-alta.',
       type: 'number',
       required: true,
@@ -242,7 +274,7 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       id: 'I-Q12',
       sectionId: 'precio',
       label: 'Precio: empieza a ser caro',
-      text: '¿A qué precio empezaría a parecerle caro?',
+      text: '¿Qué precio empezaría a parecerle caro?',
       help: 'Referencia: un jamón curado con Denominación de Origen, pieza de calidad media-alta.',
       type: 'number',
       required: true,
@@ -252,10 +284,21 @@ export const INDIVIDUAL_QUESTIONNAIRE: Questionnaire = {
       showIf: CONSUMES_JAMON,
     },
     {
+      id: 'I-Q12b',
+      sectionId: 'precio',
+      label: 'Comentario sobre el precio',
+      text: '¿Quiere matizar algo sobre el precio?',
+      help: 'Opcional. Puede explicarlo con sus palabras.',
+      type: 'long_text',
+      required: false,
+      maxLength: 500,
+      showIf: CONSUMES_JAMON,
+    },
+    {
       id: 'I-Q13',
       sectionId: 'precio',
       label: 'Precio: demasiado caro',
-      text: '¿A qué precio le parecería tan caro que no lo compraría?',
+      text: '¿Qué precio le parecería tan caro que no lo compraría?',
       help: 'Referencia: un jamón curado con Denominación de Origen, pieza de calidad media-alta.',
       type: 'number',
       required: true,

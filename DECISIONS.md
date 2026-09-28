@@ -741,3 +741,89 @@ ganadería que dice «Insuficiente» y un secadero que dice «Ajustada» → 50 
 100 % dentro de su grupo, y el grupo «Matadero» ni aparece porque está vacío. Todos rectangulares,
 BOM y UTF-8 correctos, cero decimales con punto. Capturas del panel con los tres enlaces a 1440 px
 y medición en el DOM a 390 px: `scrollWidth` = 390, sin desbordamiento.
+
+## 2026-09-28 — Enmiendas al contenido de los dos cuestionarios
+
+El Consejo envía una lista de mejoras. Antes de tocar nada se comprobó, pregunta por pregunta, que
+cada nota apuntara a la que decía: **todos los números coincidían**, incluidos «pregunta 8 / 9 / 10 /
+11 / 12» → `C-Q08`, `I-Q09`, `I-Q10`, `I-Q11`, `I-Q12`.
+
+Dos matices que no cambian el destino pero sí lo que hay que hacer: «¿esperas que vaya a crecer?»
+es `C-Q07`, que no es un sí/no sino una escala de tres; y «pregunta 9, ranking de los factores» es
+`I-Q09`, que no es un ranking sino una rejilla de importancia de 1 a 5.
+
+`company@1.0.0` → `1.1.0` (17 → 24 preguntas) · `individual@1.0.0` → `1.1.0` (20 → 23).
+
+### Cómo se recoge el «Otros»: una pregunta aparte
+
+La alternativa —una caja de texto dentro de la propia opción— habría obligado a ensanchar
+`AnswerValue`, y con ella el validador, el snapshot, las tres exportaciones, la ficha del panel y
+los componentes de opción. En las exportaciones, olvidarse de un sitio no rompe nada: pierde en
+silencio lo que escribió la gente.
+
+Con una pregunta aparte, condicionada a que hayan marcado «Otros», no hay nada que ensanchar. El
+mecanismo ya estaba en producción (`I-Q18`) y el texto llega solo a la matriz como columna propia,
+al diccionario como fila propia y al panel bajo su epígrafe. **Cero cambios** fuera de los ficheros
+de datos y de los tests que fijan su contenido.
+
+El precio: la caja aparece en la pantalla siguiente, no debajo de la opción, porque el flujo es una
+pregunta por pantalla. Todas las nuevas son opcionales y ninguna bloquea el botón Siguiente.
+
+### Decisiones de contenido que no me podía inventar
+
+Se preguntaron y se aplicaron literalmente: los rangos de rentabilidad van sobre **margen neto**
+(>10 % / 0–10 % / sin margen o pérdidas); el umbral de la D.O. sobre el precio es **el 10 %**; la
+pregunta 12 del consumidor **mantiene el importe en €/kg** y gana un comentario opcional aparte,
+porque las cuatro de precio son una serie que necesita cifras comparables; y el «Otros» de la
+rejilla de la pregunta 9 se resuelve como **pregunta abierta detrás**, porque nadie puede puntuar
+de 1 a 5 un «otros» que todavía no ha dicho cuál es.
+
+**Los tramos de C-Q07 no se solapan.** La nota decía «de un 0 a un 5 %, de un 5 a un 10 %», que
+deja a quien espera justo un 5 % con dos casillas y ninguna forma de elegir. Quedan «hasta un 5 %»,
+«entre un 5 y un 10 %» y «más de un 10 %».
+
+**C-Q09 y C-Q10 conservan los identificadores de opción.** Solo cambia el texto, así que lo ya
+recogido sigue resolviendo contra su propio snapshot.
+
+**I-Q13 se cambió sin estar en la lista.** Es la cuarta de la misma serie de precio y dejarla con
+«¿A qué precio…?» junto a tres «¿Qué precio…?» habría parecido un descuido.
+
+### Los tests hicieron su trabajo
+
+19 fallos, todos donde debían. Dos merecen mención porque no eran recuentos:
+
+- **El validador rechazó con 400 un envío de prueba** cuya respuesta a `C-Q07` era la opción
+  `crecera`, que ya no existe. Eso es exactamente lo que tiene que pasar con un identificador
+  muerto, y es la prueba de que las opciones se comprueban de verdad contra el cuestionario.
+- **`transcription.test.ts`** comprueba que cada texto esté literal en los dos `.docx`. Se declaró
+  una lista de **29 enmiendas pendientes**, una por cambio y con su motivo — y mi enumeración
+  coincidió exactamente con los 19 + 10 desajustes que el test encontró, sin sobrantes.
+
+Dos invariantes se reescribieron en vez de relajarse:
+
+- «El cuestionario de empresas se pregunta entero a todo el mundo» ahora excluye solo las
+  ampliaciones, y **sigue exigiendo que ninguna pregunta transcrita sea condicional**.
+- «Todo lo posterior a I-Q06 cuelga de I-Q06» pasa a ser **transitivo**: cuelga de I-Q06 o de algo
+  que a su vez cuelga de él. El encadenamiento funciona solo, porque una pregunta oculta no tiene
+  respuesta contra la que comparar.
+
+Y los recuentos de fidelidad **no se subieron a 24 y 23**: se filtran las ampliaciones y se siguen
+exigiendo 17 y 20 transcritas. Añadir una pregunta no puede tapar que otra haya desaparecido.
+
+### La deuda, a la vista
+
+La lista de 29 enmiendas es deuda, no diseño. El Consejo actualiza los dos documentos fuente;
+cuando lleguen, un test llamado «no longer diverges from the source» empieza a fallar en cada
+entrada que ya coincida, obligando a borrarla una a una hasta que la lista desaparezca. Mientras
+tanto la garantía sigue en pie para todo lo demás: cualquier OTRO texto que se desvíe del documento
+hace fallar la comprobación.
+
+### Comprobado
+
+337 tests, `typecheck`, `lint`, `build` y el detector en cero. Los dos cuestionarios recorridos en
+el navegador: la caja de «Otros» aparece al marcarlo y desaparece al desmarcarlo, sale como
+«Opcional» y no bloquea el botón. Enviadas respuestas de los dos públicos y **abiertas las tres
+descargas**: la matriz de empresas pasa a 69 columnas con una columna Sí/No por cada «Otros» nuevo y
+una columna de texto por cada seguimiento, con las palabras escritas dentro y **vacío —no «No»—**
+en quien no llegó a verlas; el diccionario describe las 13 columnas nuevas; y «Otros» aparece en el
+recuento de limitantes con su línea propia.

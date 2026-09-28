@@ -34,6 +34,52 @@ const ROOT = join(__dirname, '..', '..')
  */
 const SUPPLIED_BY_THE_CODE = /^I-Q03\//
 
+/**
+ * Wording the Consejo asked for on 2026-09-28 that is NOT YET in the .docx.
+ *
+ * This list is debt, not a design. The Consejo is updating the two source
+ * documents; when the new ones arrive, every entry here starts matching
+ * again and `no longer diverges from the source` below turns red on it, one
+ * by one, until the list is empty and this whole block can go.
+ *
+ * Until then the guarantee still holds for everything else: any OTHER string
+ * that drifts from the document fails the check, which is the point.
+ */
+const PENDING_IN_THE_SOURCE: Record<string, string> = {
+  // Empresas
+  'C-Q07/crecera-hasta-5': 'Desglosar «Crecerá» en tramos de crecimiento',
+  'C-Q07/crecera-5-10': 'Desglosar «Crecerá» en tramos de crecimiento',
+  'C-Q07/crecera-mas-10': 'Desglosar «Crecerá» en tramos de crecimiento',
+  'C-Q07b': 'Nueva: por qué cree que va a crecer',
+  'C-Q08/otros': 'Abrir el listado de limitantes',
+  'C-Q08b': 'Nueva: qué otros limitantes',
+  'C-Q09/buena': 'Poner rangos de margen, «buena» no significa lo mismo para todos',
+  'C-Q09/ajustada': 'Poner rangos de margen',
+  'C-Q09/insuficiente': 'Poner rangos de margen',
+  'C-Q10/si-clara': 'Dar valor cuantitativo a «de forma clara»',
+  'C-Q10/ligeramente': 'Dar valor cuantitativo a «ligeramente»',
+  'C-Q12b': 'Nueva: por qué recomendaría o no a una persona joven',
+  'C-Q13/otras': 'Abrir el listado de prácticas',
+  'C-Q13b': 'Nueva: qué otras prácticas',
+  'C-Q14b': 'Nueva: qué medidas mejorarían la retribución o el bienestar animal',
+  'C-Q16/otras': 'Abrir el listado de amenazas 2040',
+  'C-Q16b': 'Nueva: qué otras amenazas',
+  'C-Q17/otras': 'Abrir el listado de oportunidades 2040',
+  'C-Q17b': 'Nueva: qué otras oportunidades',
+
+  // Consumidores
+  'I-Q07/merienda': 'Faltaba la merienda o el almuerzo no diario',
+  'I-Q07/otras': 'Abrir el listado de ocasiones',
+  'I-Q07b': 'Nueva: en qué otras ocasiones',
+  'I-Q09/salud': '«Composición» en vez de «Salud (sal, aditivos)», más aséptico',
+  'I-Q09b': 'Nueva: algún otro factor importante',
+  'I-Q10': '«Qué precio» en vez de «A qué precio»',
+  'I-Q11': '«Qué precio le parecería una buena oportunidad», fuera «barato»',
+  'I-Q12': '«Qué precio» en vez de «A qué precio»',
+  'I-Q12b': 'Nueva: comentario sobre el precio, en palabras',
+  'I-Q13': '«Qué precio» en vez de «A qué precio», por coherencia con las otras tres',
+}
+
 /** Extracts the visible text of a .docx without unzipping to disk. */
 function docxText(filename: string): string | null {
   const path = join(ROOT, filename)
@@ -123,9 +169,22 @@ describe.each(Object.entries(SOURCES))('%s is transcribed from its source docume
   it('uses only wording that appears in the source', () => {
     const mismatches = stringsOf(questionnaire)
       .filter((entry) => !SUPPLIED_BY_THE_CODE.test(entry.where))
+      .filter((entry) => !(entry.where in PENDING_IN_THE_SOURCE))
       .filter((entry) => !source!.includes(normalise(entry.text)))
       .map((entry) => `${entry.where}: ${entry.text}`)
 
     expect(mismatches).toEqual([])
+  })
+
+  it('no longer diverges from the source, once the new document arrives', () => {
+    // Every pending entry must still actually diverge. The moment the updated
+    // .docx makes one match, this fails and the entry has to be deleted — so
+    // the debt cannot quietly outlive the reason for it.
+    const stale = stringsOf(questionnaire)
+      .filter((entry) => entry.where in PENDING_IN_THE_SOURCE)
+      .filter((entry) => source!.includes(normalise(entry.text)))
+      .map((entry) => `${entry.where} ya está en el documento: quítelo de PENDING_IN_THE_SOURCE`)
+
+    expect(stale).toEqual([])
   })
 })

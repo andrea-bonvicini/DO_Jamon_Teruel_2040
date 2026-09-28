@@ -110,7 +110,7 @@ function fullCompanyPayload() {
       'C-Q04': { kind: 'option', optionId: '51-75' },
       'C-Q05': { kind: 'options', optionIds: ['local'] },
       'C-Q06': { kind: 'option', optionId: 'crecido' },
-      'C-Q07': { kind: 'option', optionId: 'crecera' },
+      'C-Q07': { kind: 'option', optionId: 'crecera-5-10' },
       'C-Q08': { kind: 'options', optionIds: ['precio'] },
       'C-Q09': { kind: 'option', optionId: 'buena' },
       'C-Q10': { kind: 'option', optionId: 'si-clara' },

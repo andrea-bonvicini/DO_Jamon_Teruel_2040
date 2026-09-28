@@ -115,7 +115,11 @@ describe('validateSubmission — happy path', () => {
     if (!result.ok) throw new Error(result.error)
 
     expect(result.value.snapshot.version).toBe(QUESTIONNAIRES.company.version)
-    expect(result.value.snapshot.questions).toHaveLength(17)
+    // 17 transcribed + the two follow-ups asked of everybody. The payload
+    // answers «Se mantendrá», so «¿Por qué cree que va a crecer?» is not in
+    // it — which is the rebuild doing its job.
+    expect(result.value.snapshot.questions).toHaveLength(19)
+    expect(result.value.snapshot.questions.map((q) => q.id)).not.toContain('C-Q07b')
   })
 
   it('accepts a consumer who never eats jamón, with only the first six answers', () => {

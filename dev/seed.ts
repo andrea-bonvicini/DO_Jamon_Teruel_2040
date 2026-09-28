@@ -50,7 +50,7 @@ const COMPANY_A: Answers = {
   'C-Q04': { kind: 'option', optionId: 'mas-75' },
   'C-Q05': { kind: 'options', optionIds: ['local', 'espana', 'exportacion'] },
   'C-Q06': { kind: 'option', optionId: 'crecido' },
-  'C-Q07': { kind: 'option', optionId: 'crecera' },
+  'C-Q07': { kind: 'option', optionId: 'crecera-5-10' },
   'C-Q08': { kind: 'options', optionIds: ['precio', 'mano-obra', 'normativa'] },
   'C-Q09': { kind: 'option', optionId: 'ajustada' },
   'C-Q10': { kind: 'option', optionId: 'si-clara' },

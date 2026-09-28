@@ -119,7 +119,23 @@ describe('the consumer early exit', () => {
 
   it('shows all twenty questions to a weekly consumer', () => {
     const answers: Answers = { 'I-Q06': { kind: 'option', optionId: 'semanal' } }
-    expect(visibleQuestions(questions, answers)).toHaveLength(20)
+    // 20 transcribed + the 2 follow-ups gated straight on I-Q06.
+    expect(visibleQuestions(questions, answers)).toHaveLength(22)
+  })
+
+  it('holds a follow-up back until its own parent is answered', () => {
+    const weekly: Answers = { 'I-Q06': { kind: 'option', optionId: 'semanal' } }
+    const ids = () => visibleQuestions(questions, weekly).map((question) => question.id)
+
+    // «¿En qué otras ocasiones?» hangs off I-Q07, not off I-Q06.
+    expect(ids()).not.toContain('I-Q07b')
+
+    weekly['I-Q07'] = { kind: 'options', optionIds: ['otras'] }
+    expect(ids()).toContain('I-Q07b')
+
+    // And it goes away again the moment «Otras» is unticked.
+    weekly['I-Q07'] = { kind: 'options', optionIds: ['aperitivo'] }
+    expect(ids()).not.toContain('I-Q07b')
   })
 
   it('shows only the first six before the frequency question is answered', () => {

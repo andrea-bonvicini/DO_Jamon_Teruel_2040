@@ -9,9 +9,11 @@ describe('buildSteps', () => {
     expect(buildSteps(null, {}).map((s) => s.type)).toEqual(['welcome', 'audience'])
   })
 
-  it('builds the company flow: 3 fixed + 17 questions + open answer + thank you', () => {
+  it('builds the company flow: 3 fixed + 19 questions + open answer + thank you', () => {
+    // 17 transcribed + the 2 follow-ups asked of everybody. The other 5
+    // hang off an answer nobody has given yet, so they are not steps.
     const steps = buildSteps(QUESTIONNAIRES.company, {})
-    expect(steps).toHaveLength(3 + 17 + 1 + 1)
+    expect(steps).toHaveLength(3 + 19 + 1 + 1)
     expect(steps.at(0)?.type).toBe('welcome')
     expect(steps.at(1)?.type).toBe('audience')
     expect(steps.at(2)?.type).toBe('identification')
@@ -41,7 +43,9 @@ describe('buildSteps', () => {
     const grown = buildSteps(QUESTIONNAIRES.individual, consumes)
     const shrunk = buildSteps(QUESTIONNAIRES.individual, never)
 
-    expect(grown.filter((s) => s.type === 'question')).toHaveLength(20)
+    // 20 transcribed + the 2 follow-ups that hang straight off I-Q06.
+    // «¿En qué otras ocasiones?» waits for its own parent to be answered.
+    expect(grown.filter((s) => s.type === 'question')).toHaveLength(22)
     expect(shrunk.filter((s) => s.type === 'question')).toHaveLength(6)
     expect(grown.at(-1)?.type).toBe('thank-you')
     expect(shrunk.at(-1)?.type).toBe('thank-you')

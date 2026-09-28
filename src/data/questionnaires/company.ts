@@ -8,16 +8,21 @@ import type { Questionnaire } from '../types.js'
  * transcribed: the source states they are internal and do not appear in the
  * version that is sent out.
  *
- * The questionnaire has no conditional logic — every question is asked of
- * every respondent.
+ * Amended on 2026-09-28 at the Consejo's request (see DECISIONS.md). Since
+ * then it DOES have conditional logic: the follow-up questions whose id ends
+ * in `b` appear only when the parent answer calls for them, so an «Otros» box
+ * is never shown to somebody who did not tick «Otros».
  */
+/** The three bands of C-Q07 that mean «it will grow», named once. */
+const EXPECTS_GROWTH = ['crecera-hasta-5', 'crecera-5-10', 'crecera-mas-10']
+
 export const COMPANY_QUESTIONNAIRE: Questionnaire = {
   id: 'company',
   name: 'Encuesta a empresas del sector',
   description:
     'Unas preguntas sobre su actividad, su rentabilidad y su visión del sector hasta 2040.',
   estimatedDuration: '5–8 min',
-  version: 'company@1.0.0',
+  version: 'company@1.1.0',
 
   sections: [
     { id: 'identificacion', order: 1, name: 'Bloque 0 · Identificación de la empresa' },
@@ -131,11 +136,26 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
       type: 'single_choice',
       required: true,
       options: [
-        { id: 'crecera', text: 'Crecerá' },
+        // The bands do not overlap. The request said «de un 0 a un 5 %, de un
+        // 5 a un 10 %», which leaves somebody expecting exactly 5 % looking at
+        // two boxes with no way to choose.
+        { id: 'crecera-hasta-5', text: 'Crecerá hasta un 5 %' },
+        { id: 'crecera-5-10', text: 'Crecerá entre un 5 y un 10 %' },
+        { id: 'crecera-mas-10', text: 'Crecerá más de un 10 %' },
         { id: 'mantendra', text: 'Se mantendrá' },
         { id: 'disminuira', text: 'Disminuirá' },
         { id: 'no-lo-se', text: 'No lo sé' },
       ],
+    },
+    {
+      id: 'C-Q07b',
+      sectionId: 'actividad',
+      label: 'Por qué va a crecer',
+      text: '¿Por qué cree que va a crecer?',
+      type: 'long_text',
+      required: false,
+      maxLength: 500,
+      showIf: { questionId: 'C-Q07', optionIds: EXPECTS_GROWTH },
     },
     {
       id: 'C-Q08',
@@ -156,7 +176,18 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
         { id: 'sanidad', text: 'Sanidad animal' },
         { id: 'producto-do', text: 'Disponibilidad de producto que cumpla D.O.' },
         { id: 'comercializacion', text: 'Comercialización / acceso a mercado' },
+        { id: 'otros', text: 'Otros' },
       ],
+    },
+    {
+      id: 'C-Q08b',
+      sectionId: 'actividad',
+      label: 'Otros limitantes',
+      text: '¿Qué otros limitantes?',
+      type: 'short_text',
+      required: false,
+      maxLength: 300,
+      showIf: { questionId: 'C-Q08', optionIds: ['otros'] },
     },
 
     // ─── Bloque 2 · Rentabilidad y viabilidad ──────────────────────────────
@@ -168,9 +199,11 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
       type: 'single_choice',
       required: true,
       options: [
-        { id: 'buena', text: 'Buena' },
-        { id: 'ajustada', text: 'Ajustada pero viable' },
-        { id: 'insuficiente', text: 'Insuficiente' },
+        // «Buena» means a different thing to every firm, so each answer
+        // carries its band. Ids untouched on purpose.
+        { id: 'buena', text: 'Buena (margen neto superior al 10 %)' },
+        { id: 'ajustada', text: 'Ajustada pero viable (margen neto entre el 0 y el 10 %)' },
+        { id: 'insuficiente', text: 'Insuficiente (sin margen o en pérdidas)' },
       ],
     },
     {
@@ -181,8 +214,8 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
       type: 'single_choice',
       required: true,
       options: [
-        { id: 'si-clara', text: 'Sí, de forma clara' },
-        { id: 'ligeramente', text: 'Ligeramente' },
+        { id: 'si-clara', text: 'Sí, de forma clara (más de un 10 % más)' },
+        { id: 'ligeramente', text: 'Sí, ligeramente (hasta un 10 % más)' },
         { id: 'sin-diferencia', text: 'No aprecio diferencia' },
         { id: 'no-lo-se', text: 'No lo sé' },
       ],
@@ -215,6 +248,18 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
         { id: 'no', text: 'No' },
       ],
     },
+    {
+      id: 'C-Q12b',
+      sectionId: 'relevo',
+      label: 'Por qué',
+      text: '¿Por qué?',
+      // Everyone, not only those who would say no: why the sector still
+      // convinces somebody is the other half of the answer.
+      help: 'Sobre su respuesta anterior, recomendar o no a una persona joven.',
+      type: 'long_text',
+      required: false,
+      maxLength: 500,
+    },
 
     // ─── Bloque 4 · Sostenibilidad y bienestar ─────────────────────────────
     {
@@ -233,7 +278,18 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
         { id: 'agua', text: 'Medición de consumo de agua' },
         { id: 'huella', text: 'Medición de huella de carbono' },
         { id: 'ninguna', text: 'Ninguna de forma sistemática' },
+        { id: 'otras', text: 'Otras' },
       ],
+    },
+    {
+      id: 'C-Q13b',
+      sectionId: 'sostenibilidad',
+      label: 'Otras prácticas',
+      text: '¿Qué otras prácticas aplica?',
+      type: 'short_text',
+      required: false,
+      maxLength: 300,
+      showIf: { questionId: 'C-Q13', optionIds: ['otras'] },
     },
     {
       id: 'C-Q14',
@@ -247,6 +303,18 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
         { id: 'nichos', text: 'Solo en algunos nichos' },
         { id: 'no', text: 'No' },
       ],
+    },
+    {
+      id: 'C-Q14b',
+      sectionId: 'sostenibilidad',
+      label: 'Medidas propuestas',
+      text: '¿Qué medidas mejorarían esa retribución o el bienestar animal?',
+      // The point is to collect proposals from the sector itself, so it is
+      // asked of everybody and left wide open.
+      help: 'Opcional. Cualquier propuesta concreta es útil.',
+      type: 'long_text',
+      required: false,
+      maxLength: 1000,
     },
 
     // ─── Bloque 5 · Valoración de la D.O. ──────────────────────────────────
@@ -291,7 +359,18 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
         { id: 'consumo', text: 'Caída del consumo de curados' },
         { id: 'regulacion', text: 'Cambios regulatorios' },
         { id: 'distribucion', text: 'Concentración de la distribución' },
+        { id: 'otras', text: 'Otras' },
       ],
+    },
+    {
+      id: 'C-Q16b',
+      sectionId: 'horizonte',
+      label: 'Otras amenazas',
+      text: '¿Qué otras amenazas?',
+      type: 'short_text',
+      required: false,
+      maxLength: 300,
+      showIf: { questionId: 'C-Q16', optionIds: ['otras'] },
     },
     {
       id: 'C-Q17',
@@ -312,7 +391,18 @@ export const COMPANY_QUESTIONNAIRE: Questionnaire = {
         { id: 'bienestar', text: 'Bienestar animal como valor' },
         { id: 'marca-territorio', text: 'Marca-territorio' },
         { id: 'innovacion', text: 'Innovación en proceso' },
+        { id: 'otras', text: 'Otras' },
       ],
+    },
+    {
+      id: 'C-Q17b',
+      sectionId: 'horizonte',
+      label: 'Otras oportunidades',
+      text: '¿Qué otras oportunidades?',
+      type: 'short_text',
+      required: false,
+      maxLength: 300,
+      showIf: { questionId: 'C-Q17', optionIds: ['otras'] },
     },
   ],
 

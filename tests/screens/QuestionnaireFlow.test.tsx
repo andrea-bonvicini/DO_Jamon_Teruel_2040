@@ -110,7 +110,7 @@ describe('the respondent flow', () => {
     await startAs(user, 'company')
 
     expect(screen.getByRole('heading', { name: 'Tipo de actividad principal' })).toBeInTheDocument()
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Pregunta 1 de 17')
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Pregunta 1 de 19')
   })
 
   it('keeps Next disabled until a required question is answered', async () => {
@@ -154,7 +154,7 @@ describe('the respondent flow', () => {
     await user.click(next())
     await user.click(screen.getByRole('radio', { name: 'Ha crecido' }))
     await user.click(next())
-    await user.click(screen.getByRole('radio', { name: 'Crecerá' }))
+    await user.click(screen.getByRole('radio', { name: 'Se mantendrá' }))
     await user.click(next())
 
     expect(screen.getByRole('heading', { name: /principales limitantes/i })).toBeInTheDocument()
@@ -240,7 +240,7 @@ describe('the respondent flow', () => {
     expect(await screen.findByText(STRINGS.thankYou.sent)).toBeInTheDocument()
   })
 
-  it('grows the flow from 6 to 20 questions when the respondent does eat jamón', async () => {
+  it('grows the flow from 6 to 22 questions when the respondent does eat jamón', async () => {
     const user = userEvent.setup()
     render(<QuestionnaireFlow />)
     await startAs(user, 'individual')
@@ -259,7 +259,7 @@ describe('the respondent flow', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Pregunta 6 de 6')
     await user.click(screen.getByRole('radio', { name: 'Semanal' }))
     await user.click(next())
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Pregunta 7 de 20')
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Pregunta 7 de 22')
   })
 
   it('rejects a price outside the accepted range and explains why', async () => {
@@ -286,6 +286,8 @@ describe('the respondent flow', () => {
     for (const group of screen.getAllByRole('radiogroup')) {
       await user.click(within(group).getByRole('radio', { name: '4' }))
     }
+    await user.click(next())
+    // «¿Hay algún otro factor importante?» — optional, skipped by pressing Next.
     await user.click(next())
 
     // First Van Westendorp question.

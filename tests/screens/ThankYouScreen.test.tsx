@@ -6,6 +6,7 @@ import { QuestionnaireProvider } from '../../src/state/QuestionnaireContext'
 import { ThankYouScreen } from '../../src/screens/ThankYouScreen'
 import { QuestionnaireFlow } from '../../src/screens/QuestionnaireFlow'
 import { STRINGS } from '../../src/data/strings'
+import { QUESTIONNAIRES } from '../../src/data/questionnaires'
 
 const next = () => screen.getByRole('button', { name: STRINGS.actions.next })
 
@@ -64,7 +65,7 @@ describe('submission', () => {
 
     expect(Object.keys(body.answers)).toHaveLength(6)
     expect(body.snapshot.questions).toHaveLength(6)
-    expect(body.snapshot.version).toBe('individual@1.0.0')
+    expect(body.snapshot.version).toBe(QUESTIONNAIRES.individual.version)
     expect(body.openAnswer).toBeNull()
   })
 

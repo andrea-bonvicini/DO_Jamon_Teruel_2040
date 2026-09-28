@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { QUESTIONNAIRES } from '../../src/data/questionnaires'
-import type { Questionnaire } from '../../src/data/types'
+import type { Question, Questionnaire } from '../../src/data/types'
 import { hasOptions } from '../../src/data/types'
 
 const entries = Object.entries(QUESTIONNAIRES) as Array<[string, Questionnaire]>
@@ -140,19 +140,72 @@ describe.each(entries)('questionnaire "%s"', (audience, questionnaire) => {
   })
 })
 
+/**
+ * A question added after the transcription, at the Consejo's request on
+ * 2026-09-28. They are all follow-ups — an «Otros» box or a «¿por qué?» — and
+ * their ids end in `b` so the two sets stay tellable apart.
+ */
+const isAmendment = (id: string) => id.endsWith('b')
+
+const added = (audience: 'company' | 'individual') =>
+  QUESTIONNAIRES[audience].questions.filter((q) => isAmendment(q.id)).map((q) => q.id)
+
+/** True when `question` hangs off `gateId`, directly or through its parent. */
+function gatedBy(questionnaire: Questionnaire, question: Question, gateId: string): boolean {
+  const seen = new Set<string>()
+  let current: Question | undefined = question
+
+  while (current?.showIf) {
+    if (current.showIf.questionId === gateId) return true
+    if (seen.has(current.id)) return false // a cycle; the data test below forbids it
+    seen.add(current.id)
+    const parentId: string = current.showIf.questionId
+    current = questionnaire.questions.find((entry) => entry.id === parentId)
+  }
+
+  return false
+}
+
 describe('transcription fidelity', () => {
+  // The counts below still pin the SOURCE questionnaires. The amendments are
+  // counted separately on purpose: that way adding a follow-up cannot quietly
+  // cover up a transcribed question having gone missing.
   it('matches the consumer source: 20 questions, 6 blocks, no open question', () => {
     const q = QUESTIONNAIRES.individual
-    expect(q.questions).toHaveLength(20)
+    expect(q.questions.filter((question) => !isAmendment(question.id))).toHaveLength(20)
     expect(q.sections).toHaveLength(6)
     expect(q.openQuestion).toBeUndefined()
   })
 
   it('matches the company source: 17 questions, 7 blocks, one open question', () => {
     const q = QUESTIONNAIRES.company
-    expect(q.questions).toHaveLength(17)
+    expect(q.questions.filter((question) => !isAmendment(question.id))).toHaveLength(17)
     expect(q.sections).toHaveLength(7)
     expect(q.openQuestion).toBeDefined()
+  })
+
+  it('carries exactly the follow-ups the Consejo asked for', () => {
+    // Pinned by id, so adding or dropping one is a deliberate edit here.
+    expect(added('company')).toEqual([
+      'C-Q07b',
+      'C-Q08b',
+      'C-Q12b',
+      'C-Q13b',
+      'C-Q14b',
+      'C-Q16b',
+      'C-Q17b',
+    ])
+    expect(added('individual')).toEqual(['I-Q07b', 'I-Q09b', 'I-Q12b'])
+  })
+
+  it('never blocks the respondent on a follow-up', () => {
+    // They are extras. Making one required would trap somebody who ticked
+    // «Otros» and then had nothing to add.
+    for (const audience of ['company', 'individual'] as const) {
+      for (const question of QUESTIONNAIRES[audience].questions) {
+        if (isAmendment(question.id)) expect(question.required, question.id).toBe(false)
+      }
+    }
   })
 
   it('gates everything after the consumer frequency question on actually consuming', () => {
@@ -161,8 +214,12 @@ describe('transcription fidelity', () => {
     expect(index).toBeGreaterThan(-1)
 
     for (const question of q.questions.slice(index + 1)) {
-      expect(question.showIf?.questionId, question.id).toBe('I-Q06')
-      expect(question.showIf?.optionIds, question.id).not.toContain('nunca')
+      // Directly or through its parent: a follow-up of a gated question is
+      // gated too, because a hidden parent has no answer to match against.
+      expect(gatedBy(q, question, 'I-Q06'), question.id).toBe(true)
+      if (question.showIf?.questionId === 'I-Q06') {
+        expect(question.showIf.optionIds, question.id).not.toContain('nunca')
+      }
     }
   })
 
@@ -176,9 +233,29 @@ describe('transcription fidelity', () => {
     }
   })
 
-  it('asks the company questionnaire of everyone', () => {
+  it('asks every transcribed company question of everyone', () => {
+    // The source questionnaire has no conditional logic at all. Only the
+    // follow-ups added afterwards may hide, and only behind their own parent.
     for (const question of QUESTIONNAIRES.company.questions) {
+      if (isAmendment(question.id)) continue
       expect(question.showIf, question.id).toBeUndefined()
+    }
+  })
+
+  it('never hangs a follow-up on something that is not right above it', () => {
+    // A follow-up must depend on a real, earlier choice question, or it would
+    // be unreachable — `visibleQuestions` hides anything whose gate has no
+    // answer yet.
+    for (const audience of ['company', 'individual'] as const) {
+      const questionnaire = QUESTIONNAIRES[audience]
+      for (const [index, question] of questionnaire.questions.entries()) {
+        if (!isAmendment(question.id) || !question.showIf) continue
+        const parentIndex = questionnaire.questions.findIndex(
+          (entry) => entry.id === question.showIf!.questionId,
+        )
+        expect(parentIndex, question.id).toBeGreaterThan(-1)
+        expect(parentIndex, question.id).toBeLessThan(index)
+      }
     }
   })
 })
