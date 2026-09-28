@@ -67,6 +67,7 @@ const submission: ValidSubmission = {
   questionnaireId: 'company',
   questionnaireVersion: QUESTIONNAIRES.company.version,
   identification: { role: 'Gerente' },
+  startedAt: null,
   answers,
   openAnswer: 'Más promoción',
   snapshot: buildSnapshot(QUESTIONNAIRES.company, answers),
@@ -89,6 +90,11 @@ describe('insertResponse', () => {
       answers,
       questionnaire: submission.snapshot,
       open_answer: 'Más promoción',
+      // Fieldwork metadata. The wave is stamped here, server-side, and never
+      // taken from the client; `started_at` is the one field that is.
+      wave: '2026-T4',
+      started_at: null,
+      completion_status: 'complete',
     })
   })
 

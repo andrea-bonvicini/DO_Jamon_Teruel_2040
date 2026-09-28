@@ -29,6 +29,7 @@ const payload: SubmissionPayload = {
   identification: {},
   answers: { 'C-Q01': { kind: 'option', optionId: 'secadero' } },
   openAnswer: null,
+  startedAt: null,
   snapshot: buildSnapshot(QUESTIONNAIRES.company, {
     'C-Q01': { kind: 'option', optionId: 'secadero' },
   }),

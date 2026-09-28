@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildCodebookCsv,
+  buildCodebookJson,
   buildFrequencyCsv,
   buildMatrixCsv,
+  buildStatisticsCsv,
   exportFilename,
 } from '../../server/exports'
+import { buildMicrodataCsv } from '../../server/microdata'
 import type { ResponseRow } from '../../server/responsesRepository'
 import { buildSnapshot } from '../../src/data/snapshot'
 import type { QuestionnaireSnapshot, SnapshotQuestion } from '../../src/data/snapshot'
@@ -16,8 +19,8 @@ import { UTF8_BOM } from '../../server/csv'
  * A real CSV reader, not `split(';')`: headers now carry human text, and a
  * naive split would quietly shift every column the moment one is quoted.
  */
-function parse(csv: string): string[][] {
-  const body = csv.slice(UTF8_BOM.length)
+function parse(csv: string, separator = ';'): string[][] {
+  const body = csv.startsWith(UTF8_BOM) ? csv.slice(UTF8_BOM.length) : csv
   const rows: string[][] = []
   let row: string[] = []
   let field = ''
@@ -35,7 +38,7 @@ function parse(csv: string): string[][] {
       continue
     }
     if (char === '"') quoted = true
-    else if (char === ';') {
+    else if (char === separator) {
       row.push(field)
       field = ''
     } else if (char === '\r' && body[i + 1] === '\n') {
@@ -394,17 +397,29 @@ describe('the frequency table', () => {
     expect(column(rows, blanco, 'Preguntados')).toBe('1')
   })
 
+  it('keeps every statistic out of the distributions file', () => {
+    const snap = snapshot('v1', '2026-01-01T00:00:00.000Z', [
+      makeQuestion({ id: 'Q1', type: 'number', label: 'Precio', text: 'Precio', unit: '€/kg' }),
+    ])
+    const pool = [makeRow('r1', snap, { Q1: { kind: 'number', value: 10 } })]
+
+    // A mean used to sit in these rows with a half-empty column beside the
+    // percentage, which made the count column untrustworthy to sum.
+    expect(parse(buildFrequencyCsv(pool))[0]).not.toContain('Valor')
+    expect(parse(buildStatisticsCsv(pool))[0]).toContain('Valor')
+  })
+
   it('separates the count from the statistic, so Respuestas stays summable', () => {
     const snap = snapshot('v1', '2026-01-01T00:00:00.000Z', [
       makeQuestion({ id: 'Q1', type: 'number', label: 'Precio', text: 'Precio', unit: '€/kg' }),
     ])
     const rows = parse(
-      buildFrequencyCsv([
+      buildStatisticsCsv([
         makeRow('r1', snap, { Q1: { kind: 'number', value: 10 } }),
         makeRow('r2', snap, { Q1: { kind: 'number', value: 21 } }),
       ]),
     )
-    const media = find(rows, 'Precio (€/kg)', 'Media')!
+    const media = rows.slice(1).find((l) => l[rows[0]!.indexOf('Estadístico')] === 'Media')!
 
     expect(column(rows, media, 'Respuestas')).toBe('2') // the n
     expect(column(rows, media, 'Valor')).toBe('15,50') // the mean
@@ -415,13 +430,14 @@ describe('the frequency table', () => {
       makeQuestion({ id: 'Q1', type: 'number', label: 'P', text: 'P' }),
     ])
     const rows = parse(
-      buildFrequencyCsv(
+      buildStatisticsCsv(
         [1, 2, 3, 4].map((value, index) =>
           makeRow(`r${index}`, snap, { Q1: { kind: 'number', value } }),
         ),
       ),
     )
-    expect(column(rows, find(rows, 'P', 'Mediana')!, 'Valor')).toBe('2,50')
+    const median = rows.slice(1).find((l) => l[rows[0]!.indexOf('Estadístico')] === 'Mediana')!
+    expect(column(rows, median, 'Valor')).toBe('2,50')
   })
 
   it('leaves the percentage empty rather than writing NaN', () => {
@@ -730,6 +746,7 @@ describe('the data dictionary', () => {
   const answers: Answers = {
     'C-Q01': { kind: 'option', optionId: 'secadero' },
     'C-Q05': { kind: 'options', optionIds: ['local'] },
+    'C-Q08': { kind: 'options', optionIds: ['otros'] },
     'C-Q15': { kind: 'scaleRows', values: { 'aporta-valor': 5 } },
   }
   const pool = [
@@ -741,60 +758,94 @@ describe('the data dictionary', () => {
     ),
   ]
 
-  it('has exactly one row per column of the matrix, in the same order', () => {
-    // If the two ever drift apart it must fail here, not in the analysis.
-    const matrix = parse(buildMatrixCsv(pool))[0]!
+  it('has exactly one entry per microdata column, in the same order', () => {
+    // The dictionary describes the file the analysis starts from. If the two
+    // ever drift apart it must fail here, not in the analysis.
+    const micro = parse(buildMicrodataCsv(pool), ',')[0]!
     const dictionary = parse(buildCodebookCsv(pool))
       .slice(1)
-      .map((l) => l[0])
+      .map((line) => line[0])
 
-    // Exactly: strip the columns that describe themselves — the company
-    // name, the date and the technical tail — and what is left must BE the
-    // dictionary, in order. A column gained or lost on either side fails.
-    const selfEvident = new Set([
-      'Nombre de la empresa',
-      'Fecha',
-      'Fecha ISO',
-      'Público',
-      'Versión',
-      'Identificador',
-      'Sin resolver',
+    const metadata = new Set([
+      'respondent_id',
+      'wave',
+      'audience',
+      'questionnaire_version',
+      'submitted_at',
+      'started_at',
+      'duration_seconds',
+      'completion_status',
     ])
-    expect(matrix.filter((header) => !selfEvident.has(header))).toEqual(dictionary)
+    expect(micro.filter((code) => !metadata.has(code))).toEqual(dictionary)
   })
 
-  it('says what a blank means on a multiple-choice column', () => {
-    // The one thing nobody can guess six months later.
+  it('keys every entry on the immutable code, not on the Spanish label', () => {
     const rows = parse(buildCodebookCsv(pool))
-    const mercados = rows.slice(1).find((l) => l[0]!.startsWith('Mercados — '))!
-    expect(column(rows, mercados, 'Valores posibles')).toBe('Sí | No | (vacío = no se preguntó)')
+    expect(rows[0]![0]).toBe('Código')
+    expect(rows.slice(1).map((l) => l[0])).toContain('C-Q01')
+    expect(rows.slice(1).map((l) => l[0])).toContain('C-Q05.local')
   })
 
-  it('lists every option of a single-choice question, chosen or not', () => {
+  it('carries the human column beside the code, so one dictionary serves both', () => {
     const rows = parse(buildCodebookCsv(pool))
-    const actividad = rows.slice(1).find((l) => l[0] === 'Tipo de actividad')!
+    const actividad = rows.slice(1).find((l) => l[0] === 'C-Q01')!
+    expect(column(rows, actividad, 'Columna en respuestas')).toBe('Tipo de actividad')
+  })
+
+  it('says what a 1 and a 0 mean on a multi-choice column', () => {
+    const rows = parse(buildCodebookCsv(pool))
+    const local = rows.slice(1).find((l) => l[0] === 'C-Q05.local')!
+    expect(column(rows, local, 'Valores posibles')).toBe('1 = marcada | 0 = no marcada')
+  })
+
+  it('lists every option code with its label, chosen or not', () => {
+    const rows = parse(buildCodebookCsv(pool))
+    const actividad = rows.slice(1).find((l) => l[0] === 'C-Q01')!
     const values = column(rows, actividad, 'Valores posibles')
 
-    expect(values).toContain('Matadero')
-    expect(values).toContain('Secadero / industria elaboradora')
+    expect(values).toContain('matadero = Matadero')
+    expect(values).toContain('secadero = Secadero / industria elaboradora')
   })
 
-  it('carries the version, because option sets change between them', () => {
+  it('states who was asked each question', () => {
     const rows = parse(buildCodebookCsv(pool))
-    const actividad = rows.slice(1).find((l) => l[0] === 'Tipo de actividad')!
-    expect(column(rows, actividad, 'Versión')).toBe(QUESTIONNAIRES.company.version)
+    expect(column(rows, rows.slice(1).find((l) => l[0] === 'C-Q01')!, 'Base')).toBe(
+      'A todo el mundo',
+    )
+    // A follow-up carries the condition that produced it.
+    const seguimiento = rows.slice(1).find((l) => l[0] === 'C-Q08b')!
+    expect(column(rows, seguimiento, 'Base')).toContain('Otros')
+  })
+
+  it('dates every code to the wave it first appeared in', () => {
+    const rows = parse(buildCodebookCsv(pool))
+    expect(column(rows, rows.slice(1).find((l) => l[0] === 'C-Q01')!, 'Oleada de alta')).toBe(
+      '2026-T4',
+    )
   })
 
   it('describes the open question, which is in no list of questions', () => {
-    const rows = parse(buildCodebookCsv(pool))
-    expect(rows.slice(1).some((l) => l[0] === 'Respuesta abierta')).toBe(true)
+    expect(
+      parse(buildCodebookCsv(pool))
+        .slice(1)
+        .some((l) => l[0] === 'open_answer'),
+    ).toBe(true)
   })
 
-  it('gives a scale its range', () => {
+  it('gives a scale item its range', () => {
     const rows = parse(buildCodebookCsv(pool))
-    const grid = rows.slice(1).find((l) => l[0]!.startsWith('Valoración de la D.O. — '))!
-    expect(column(rows, grid, 'Valores posibles')).toContain('1')
-    expect(column(rows, grid, 'Valores posibles')).toContain('5')
+    const item = rows.slice(1).find((l) => l[0] === 'C-Q15.aporta-valor')!
+    expect(column(rows, item, 'Valores posibles')).toContain('1')
+    expect(column(rows, item, 'Valores posibles')).toContain('5')
+  })
+
+  it('publishes the same dictionary as JSON, with the sentinels declared', () => {
+    const json = JSON.parse(buildCodebookJson(pool))
+    expect(json.wave).toBe('2026-T4')
+    expect(json.columns.map((c: { code: string }) => c.code)).toContain('C-Q01')
+    // Nobody can read a -99 without this.
+    const values = json.sentinels.map((s: { value: number }) => s.value)
+    expect(values.toSorted((a: number, b: number) => a - b)).toEqual([-99, -98, -97])
   })
 
   it('writes only a header when there is nothing to describe', () => {

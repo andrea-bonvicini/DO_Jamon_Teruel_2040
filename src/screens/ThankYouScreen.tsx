@@ -39,6 +39,7 @@ export function ThankYouScreen() {
       questionnaireVersion: questionnaire.version,
       identification: state.identification,
       answers,
+      startedAt: state.startedAt,
       openAnswer: state.openAnswer.trim() === '' ? null : state.openAnswer.trim(),
       snapshot: buildSnapshot(questionnaire, state.answers),
     }

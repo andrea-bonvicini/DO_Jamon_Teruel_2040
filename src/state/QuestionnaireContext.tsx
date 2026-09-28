@@ -8,6 +8,7 @@ import type { Step } from './steps'
 export type SubmissionStatus = 'idle' | 'sending' | 'sent' | 'error'
 
 export interface State {
+  startedAt: string
   audience: AudienceId | null
   identification: Record<string, string | number>
   privacyAccepted: boolean
@@ -29,6 +30,8 @@ export type Action =
   | { type: 'RESET' }
 
 export const INITIAL_STATE: State = {
+  /** Set once, when the app mounts: the duration is measured from here. */
+  startedAt: new Date().toISOString(),
   audience: null,
   identification: {},
   privacyAccepted: false,
@@ -82,7 +85,7 @@ export function reducer(state: State, action: Action): State {
 
     case 'RESET':
       // "Nuevo cuestionario": in-memory reset, never a page reload.
-      return INITIAL_STATE
+      return { ...INITIAL_STATE, startedAt: new Date().toISOString() }
 
     default:
       return state

@@ -1,0 +1,885 @@
+{
+  "currentWave": "2026-T4",
+  "codes": {
+    "C-Q01": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q01.ganadera": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q01.matadero": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q01.secadero": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q01.mixta": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q01.otra": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q02": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q02.1-5": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q02.6-20": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q02.21-50": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q02.mas-50": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q03": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q03.menos-10": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q03.10-25": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q03.mas-25": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q04": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q04.menos-25": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q04.25-50": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q04.51-75": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q04.mas-75": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q05": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q05.local": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q05.aragon": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q05.espana": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q05.exportacion": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q05.n_selected": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q06": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q06.crecido": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q06.mantenido": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q06.disminuido": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q07": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q07.crecera-hasta-5": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q07.crecera-5-10": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q07.crecera-mas-10": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q07.mantendra": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q07.disminuira": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q07.no-lo-se": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q07b": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.precio": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.piensos": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.energia": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.mano-obra": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.normativa": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.sanidad": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.producto-do": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.comercializacion": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.otros": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08.n_selected": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q08b": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q09": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q09.buena": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q09.ajustada": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q09.insuficiente": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q10": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q10.si-clara": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q10.ligeramente": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q10.sin-diferencia": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q10.no-lo-se": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q11": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q11.si": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q11.no": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q11.no-aplica": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q12": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q12.si": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q12.reservas": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q12.no": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q12b": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13.bienestar": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13.purines": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13.energia": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13.agua": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13.huella": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13.ninguna": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13.otras": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13.n_selected": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q13b": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q14": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q14.si": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q14.nichos": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q14.no": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q14b": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q15": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q15.aporta-valor": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q15.controles": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q15.ayuda-vender": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q15.defiende": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q15.comunicacion": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.clima": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.costes": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.relevo": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.sanidad": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.competencia": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.consumo": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.regulacion": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.distribucion": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.otras": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16.n_selected": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q16b": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.exportacion": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.online": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.sostenibilidad": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.turismo": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.formatos": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.bienestar": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.marca-territorio": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.innovacion": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.otras": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17.n_selected": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "C-Q17b": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "open_answer": {
+      "audience": "company",
+      "since": "2026-T4"
+    },
+    "I-Q01": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q01.18-29": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q01.30-44": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q01.45-59": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q01.60-mas": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q02": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q02.mujer": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q02.hombre": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q02.ns-nc": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.andalucia": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.aragon": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.asturias": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.baleares": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.canarias": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.cantabria": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.castilla-la-mancha": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.castilla-y-leon": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.cataluna": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.ceuta": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.extremadura": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.galicia": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.la-rioja": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.madrid": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.melilla": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.murcia": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.navarra": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.pais-vasco": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q03.valencia": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q04": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q04.rural": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q04.ciudad-media": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q04.gran-ciudad": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q05": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q05.yo": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q05.compartido": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q05.otra-persona": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q06": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q06.varias-semana": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q06.semanal": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q06.mensual": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q06.especiales": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q06.nunca": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07.diario": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07.aperitivo": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07.merienda": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07.celebraciones": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07.regalo": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07.otras": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07.n_selected": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q07b": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q08": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q08.supermercado": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q08.especializada": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q08.mercado": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q08.online": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q08.productor": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q08.n_selected": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.sabor": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.precio": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.origen": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.marca": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.dop": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.bienestar": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.alimentacion": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.curacion": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.aspecto": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.salud": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.formato": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.sostenibilidad": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09.local": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q09b": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q10": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q11": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q12": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q12b": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q13": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q14": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q14.con-do": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q14.sin-sello": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q14.indiferente": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q15": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q15.bien": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q15.suena": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q15.no": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q16": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q16.zona": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q16.controles": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q16.alimentacion": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q16.curacion": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q16.mas-caro": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q16.no-lo-se": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q16.n_selected": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q17": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q17.si": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q17.quiza": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q17.no": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q18": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q19": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q19.si": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q19.moderacion": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q19.no": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q19.no-lo-se": {
+      "audience": "individual",
+      "since": "2026-T4"
+    },
+    "I-Q20": {
+      "audience": "individual",
+      "since": "2026-T4"
+    }
+  }
+}

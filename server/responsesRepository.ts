@@ -1,3 +1,4 @@
+import { currentWave } from './wave.js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { QuestionnaireSnapshot } from '../src/data/snapshot.js'
 import { AUDIENCE_IDS } from '../src/data/types.js'
@@ -18,6 +19,13 @@ export interface ResponseRow {
   answers: Answers
   questionnaire: QuestionnaireSnapshot
   open_answer: string | null
+  /**
+   * Fieldwork metadata, added 2026-09-30. Null on every row written before
+   * that migration, and that must stay tellable apart from a real value.
+   */
+  wave?: string | null
+  started_at?: string | null
+  completion_status?: 'complete' | 'partial' | null
 }
 
 /** The trimmed shape the admin list renders. */
@@ -47,6 +55,9 @@ export async function insertResponse(
       answers: submission.answers,
       questionnaire: submission.snapshot,
       open_answer: submission.openAnswer,
+      wave: currentWave(),
+      started_at: submission.startedAt,
+      completion_status: 'complete',
     })
     .select('id')
     .single()

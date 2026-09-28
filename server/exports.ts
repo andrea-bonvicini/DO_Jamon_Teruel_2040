@@ -2,6 +2,13 @@ import { resolveSnapshot } from '../src/data/snapshot.js'
 import type { SnapshotQuestion } from '../src/data/snapshot.js'
 import type { AnswerValue } from '../src/data/types.js'
 import { STRINGS, format } from '../src/data/strings.js'
+import { QUESTIONNAIRES } from '../src/data/questionnaires/index.js'
+import { hasOptions } from '../src/data/types.js'
+import type { AudienceId } from '../src/data/types.js'
+import { OPEN_ANSWER_CODE, SENTINELS } from '../src/data/codes.js'
+import CODE_REGISTRY from '../src/data/codeRegistry.json' with { type: 'json' }
+import { microdataColumns } from './microdata.js'
+import type { MicroColumn } from './microdata.js'
 import type { ResponseRow } from './responsesRepository.js'
 import { toCsv } from './csv.js'
 import {
@@ -284,57 +291,55 @@ export function buildMatrixCsv(rows: ResponseRow[]): string {
   return toCsv(headers, body)
 }
 
-export type ExportFormat = 'matrix' | 'frequency' | 'codebook'
+export type ExportFormat =
+  | 'microdata'
+  | 'opentext'
+  | 'matrix'
+  | 'frequency'
+  | 'statistics'
+  | 'codebook'
+  | 'codebookJson'
 
 const FILE_STEM: Record<ExportFormat, string> = {
+  microdata: E.fileMicrodata,
+  opentext: E.fileOpenText,
   matrix: E.fileMatrix,
   frequency: E.fileFrequency,
+  statistics: E.fileStatistics,
   codebook: E.fileCodebook,
+  codebookJson: E.fileCodebook,
 }
 
 /** `respuestas-empresas.csv`: the file says whose answers it holds. */
 export function exportFilename(shape: ExportFormat, audience: string | null): string {
   const what = FILE_STEM[shape]
+  const extension = shape === 'codebookJson' ? 'json' : 'csv'
   const who =
     audience === 'company'
       ? E.fileCompany
       : audience === 'individual'
         ? E.fileIndividual
         : E.fileAll
-  return `${what}-${who}.csv`
+  return `${what}-${who}.${extension}`
 }
 
 function audienceLabel(audience: string): string {
   if (audience === 'company') return STRINGS.admin.company
   if (audience === 'individual') return STRINGS.admin.individual
   return audience
-}
-// ─── The frequency table ────────────────────────────────────────────────────
+}// ─── Distributions and statistics, kept in separate files ───────────────────
 
 interface Tally {
-  /** Respondents who gave any answer to this question. */
   answered: number
-  /** Chosen count per option id. */
   options: Map<string, number>
-  /** Ratings per grid row id. */
   rows: Map<string, number[]>
-  /** Every numeric value, for `scale` and `number`. */
   values: number[]
-  /** Free-text answers that were not blank. */
   written: number
-  /** Raw ids no snapshot explained, with how often they appeared. */
   unresolved: Map<string, number>
 }
 
 function emptyTally(): Tally {
-  return {
-    answered: 0,
-    options: new Map(),
-    rows: new Map(),
-    values: [],
-    written: 0,
-    unresolved: new Map(),
-  }
+  return { answered: 0, options: new Map(), rows: new Map(), values: [], written: 0, unresolved: new Map() }
 }
 
 function bump(counter: Map<string, number>, key: string): void {
@@ -407,19 +412,70 @@ function percent(count: number, denominator: number): string {
 }
 
 /**
- * One block of the frequency table: every question and option counted over
- * ONE set of respondents — all of them, or one subgroup.
+ * Two segmenting variables are collinear when they cut the sample the same
+ * way — every respondent in one group of A is in the same group of B, and
+ * back again. Then one of them tells you nothing the other did not.
  *
- * `skipKey` is the question the subgroup was cut by, left out of its own
- * block: «of the mataderos, 100 % are mataderos» is noise.
+ * Comparing the count rows would spot the symptom; comparing the partitions
+ * spots the cause, and it is what makes the warning worth reading: «Personas
+ * empleadas reparte a la gente igual que Tipo de actividad».
  */
+export function collinearSegments(
+  rows: ResponseRow[],
+  spine: SpineQuestion[],
+): Map<string, string> {
+  const segments = segmentsOf(spine)
+  const warnings = new Map<string, string>()
+
+  const groupsOf = (question: SpineQuestion) =>
+    rows.map((row) => {
+      const answer = row.answers?.[question.id]
+      return answer?.kind === 'option' ? answer.optionId : null
+    })
+
+  for (const [index, question] of segments.entries()) {
+    const mine = groupsOf(question)
+    // Fewer than two groups cannot be collinear with anything; it is simply
+    // a constant, which the empty-group rule already drops.
+    if (new Set(mine.filter(Boolean)).size < 2) continue
+
+    for (const earlier of segments.slice(0, index)) {
+      const theirs = groupsOf(earlier)
+      const mapping = new Map<string, string>()
+      const inverse = new Map<string, string>()
+      let identical = true
+
+      for (const [i, value] of mine.entries()) {
+        const other = theirs[i] ?? null
+        if (value === null || other === null) continue
+        if ((mapping.get(value) ?? other) !== other || (inverse.get(other) ?? value) !== value) {
+          identical = false
+          break
+        }
+        mapping.set(value, other)
+        inverse.set(other, value)
+      }
+
+      if (identical && mapping.size >= 2) {
+        warnings.set(question.id, format(E.collinear, { other: earlier.label }))
+        break
+      }
+    }
+  }
+
+  return warnings
+}
+
+/** One block of counts over one set of respondents, plus its statistics. */
 function frequencyBlock(
-  body: Array<Array<unknown>>,
+  distributions: Array<Array<unknown>>,
+  statistics: Array<Array<unknown>>,
   spine: SpineQuestion[],
   rows: ResponseRow[],
   segment: string,
   group: string,
   skipKey: string | null,
+  warning: string,
 ): void {
   const offers = countOffers(rows, spine)
   const tallies = tallyAll(rows, spine)
@@ -428,16 +484,10 @@ function frequencyBlock(
     if (question.key === skipKey) continue
     const tally = tallies.get(question.key) ?? emptyTally()
     const asked = offers.asked.get(question.key) ?? 0
-    const head = [
-      segment,
-      group,
-      audienceLabel(question.audience),
-      question.sectionName,
-      question.unit
-        ? format(E.withUnit, { label: question.label, unit: question.unit })
-        : question.label,
-      question.text,
-    ]
+    const label = question.unit
+      ? format(E.withUnit, { label: question.label, unit: question.unit })
+      : question.label
+    const head = [segment, group, audienceLabel(question.audience), question.sectionName, question.id, label, question.text]
 
     const line = (
       rowText: string,
@@ -445,11 +495,10 @@ function frequencyBlock(
       option: string,
       count: number,
       offered: number | '',
-      value: string,
       pct: string,
       unresolved = false,
     ) => {
-      body.push([
+      distributions.push([
         ...head,
         rowText,
         kind,
@@ -457,10 +506,14 @@ function frequencyBlock(
         count,
         offered,
         tally.answered,
-        value,
         pct,
         unresolved ? E.yes : '',
+        warning,
       ])
+    }
+
+    const stat = (rowText: string, name: string, n: number, value: string) => {
+      statistics.push([...head, rowText, name, n, asked, value, warning])
     }
 
     switch (question.type) {
@@ -470,7 +523,7 @@ function frequencyBlock(
         for (const option of question.options) {
           const count = tally.options.get(option.id) ?? 0
           const offered = offers.option.get(`${question.key}\u0000${option.id}`) ?? 0
-          line('', kind, option.text, count, offered, '', percent(count, tally.answered))
+          line('', kind, option.text, count, offered, percent(count, tally.answered))
         }
         break
       }
@@ -479,18 +532,10 @@ function frequencyBlock(
         const { min, max } = question.scale ?? { min: 1, max: 5 }
         for (let point = min; point <= max; point += 1) {
           const count = tally.values.filter((value) => value === point).length
-          line('', E.kindScalePoint, String(point), count, asked, '', percent(count, tally.answered))
+          line('', E.kindScalePoint, String(point), count, asked, percent(count, tally.answered))
         }
         if (tally.values.length > 0) {
-          line(
-            '',
-            E.kindStatistic,
-            E.statMean,
-            tally.values.length,
-            asked,
-            formatNumber(mean(tally.values), 2),
-            '',
-          )
+          stat('', E.statMean, tally.values.length, formatNumber(mean(tally.values), 2))
         }
         break
       }
@@ -502,26 +547,10 @@ function frequencyBlock(
           const offered = offers.row.get(`${question.key}\u0000${gridRow.id}`) ?? 0
           for (let point = min; point <= max; point += 1) {
             const count = values.filter((value) => value === point).length
-            line(
-              gridRow.text,
-              E.kindScalePoint,
-              String(point),
-              count,
-              offered,
-              '',
-              percent(count, values.length),
-            )
+            line(gridRow.text, E.kindScalePoint, String(point), count, offered, percent(count, values.length))
           }
           if (values.length > 0) {
-            line(
-              gridRow.text,
-              E.kindStatistic,
-              E.statMean,
-              values.length,
-              offered,
-              formatNumber(mean(values), 2),
-              '',
-            )
+            stat(gridRow.text, E.statMean, values.length, formatNumber(mean(values), 2))
           }
         }
         break
@@ -529,43 +558,37 @@ function frequencyBlock(
 
       case 'number': {
         const values = tally.values
-        line('', E.kindStatistic, E.statCount, values.length, asked, '', '')
+        stat('', E.statCount, values.length, String(values.length))
         if (values.length > 0) {
-          const stats: Array<[string, number]> = [
+          const named: Array<[string, number]> = [
             [E.statMean, mean(values)],
             [E.statMedian, median(values)],
             [E.statMin, Math.min(...values)],
             [E.statMax, Math.max(...values)],
           ]
-          for (const [name, value] of stats) {
-            line('', E.kindStatistic, name, values.length, asked, formatNumber(value, 2), '')
-          }
+          for (const [name, value] of named) stat('', name, values.length, formatNumber(value, 2))
         }
         break
       }
 
       case 'short_text':
       case 'long_text':
-        line('', E.kindFreeText, '', tally.written, asked, '', '')
+        line('', E.kindFreeText, '', tally.written, asked, '')
         break
     }
 
-    // Raw ids no snapshot explains keep a line of their own. The hard rule:
-    // nothing is dropped just because it stopped being recognisable.
     const unknown = [...tally.unresolved].toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     for (const [raw, count] of unknown) {
-      line('', E.kindOption, raw, count, '', '', percent(count, tally.answered), true)
+      line('', E.kindOption, raw, count, '', percent(count, tally.answered), true)
     }
 
-    // Item nonresponse, made visible rather than left as a gap between two
-    // columns nobody compares.
-    const missing = asked - tally.answered
-    if (missing > 0) {
-      line('', E.kindNoAnswer, '', missing, asked, '', percent(missing, asked))
+    const nonresponse = asked - tally.answered
+    if (nonresponse > 0) {
+      line('', E.kindNoAnswer, '', nonresponse, asked, percent(nonresponse, asked))
     }
   }
 
-  appendOpenAnswer(body, rows, segment, group)
+  appendOpenAnswer(distributions, rows, segment, group, warning)
 }
 
 /** The respondents whose answer to `question` was `optionId`. */
@@ -576,30 +599,63 @@ function groupOf(rows: ResponseRow[], question: SpineQuestion, optionId: string)
   })
 }
 
+/** Both derived files in one pass, so they can never disagree. */
+function buildBlocks(rows: ResponseRow[]): {
+  distributions: Array<Array<unknown>>
+  statistics: Array<Array<unknown>>
+} {
+  const spine = buildSpine(rows)
+  const warnings = collinearSegments(rows, spine)
+  const distributions: Array<Array<unknown>> = []
+  const statistics: Array<Array<unknown>> = []
+
+  frequencyBlock(distributions, statistics, spine, rows, E.segmentTotal, E.groupAll, null, '')
+
+  for (const question of segmentsOf(spine)) {
+    const warning = warnings.get(question.id) ?? ''
+    if (warning) console.warn(`[export] ${question.label}: ${warning}`)
+
+    for (const option of question.options) {
+      const group = groupOf(rows, question, option.id)
+      if (group.length === 0) continue
+      frequencyBlock(
+        distributions,
+        statistics,
+        spine,
+        group,
+        question.label,
+        option.text,
+        question.key,
+        warning,
+      )
+    }
+  }
+
+  return { distributions, statistics }
+}
+
 /**
- * Every question and option, with the counts — first over everybody, then
- * over each subgroup of the questions marked `segment` in the data files.
+ * Every question and option with its counts — first over everybody, then over
+ * each subgroup of the questions marked `segment` in the data files.
+ *
+ * Derived from the same pass as the statistics file, and holding ONLY
+ * distributions: a mean used to sit in these rows with its own half-empty
+ * column beside the percentage, which made the whole column untrustworthy to
+ * sum. Statistics now live in `estadisticos-<público>.csv`.
  *
  * Denominators are recomputed inside each block, so a percentage of mataderos
- * is over mataderos. That is the whole point: a breakdown against the overall
- * denominator would mislead more than having no breakdown at all. It also
- * falls out correctly for the conditional questions — inside the «Nunca»
- * group, the fourteen gated questions were offered to nobody, so they read 0
- * rather than borrowing the whole sample's numbers.
- *
- * Two things to read carefully. On a multiple-choice question the percentages
- * add up to more than 100, because one person can pick several options — that
- * is not a rounding error. And a group small enough to identify a respondent
- * must not be published: `Respondieron` carries its size on every line.
+ * is over mataderos. Two things to read carefully: on a multiple-choice
+ * question the percentages add up to more than 100, because one person can
+ * pick several options; and a group small enough to identify a respondent
+ * must not be published — `Respondieron` carries its size on every line.
  */
 export function buildFrequencyCsv(rows: ResponseRow[]): string {
-  const spine = buildSpine(rows)
-
   const headers = [
     E.segment,
     E.group,
     E.audience,
     E.section,
+    E.code,
     E.question,
     E.statement,
     E.row,
@@ -608,26 +664,33 @@ export function buildFrequencyCsv(rows: ResponseRow[]): string {
     E.answers,
     E.offered,
     E.answered,
-    E.value,
     E.percent,
     E.unresolved,
+    E.warning,
   ]
 
-  const body: Array<Array<unknown>> = []
-  frequencyBlock(body, spine, rows, E.segmentTotal, E.groupAll, null)
+  return toCsv(headers, buildBlocks(rows).distributions)
+}
 
-  for (const question of segmentsOf(spine)) {
-    for (const option of question.options) {
-      const group = groupOf(rows, question, option.id)
-      // A group nobody falls into is left out rather than emitted as a
-      // hundred lines of zeros. Nothing is hidden: its size is right there
-      // in the total block, on this question's own line.
-      if (group.length === 0) continue
-      frequencyBlock(body, spine, group, question.label, option.text, question.key)
-    }
-  }
+/** Computed statistics, never mixed into the distributions. */
+export function buildStatisticsCsv(rows: ResponseRow[]): string {
+  const headers = [
+    E.segment,
+    E.group,
+    E.audience,
+    E.section,
+    E.code,
+    E.question,
+    E.statement,
+    E.row,
+    E.statistic,
+    E.answers,
+    E.offered,
+    E.value,
+    E.warning,
+  ]
 
-  return toCsv(headers, body)
+  return toCsv(headers, buildBlocks(rows).statistics)
 }
 
 /** The open question is an answer too; dropping it would lose data. */
@@ -636,6 +699,7 @@ function appendOpenAnswer(
   rows: ResponseRow[],
   segment: string,
   group: string,
+  warning: string,
 ): void {
   const asked = rows.filter((row) => wasAskedOpenQuestion(row.questionnaire, row.open_answer))
   if (asked.length === 0) return
@@ -647,6 +711,7 @@ function appendOpenAnswer(
     group,
     audienceLabel(asked[0]!.respondent_type),
     '',
+    OPEN_ANSWER_CODE,
     E.openAnswer,
     '',
     '',
@@ -655,65 +720,163 @@ function appendOpenAnswer(
     written,
     asked.length,
     written,
-    '',
     percent(written, asked.length),
     '',
+    warning,
   ])
 }
 
 // ─── The data dictionary ────────────────────────────────────────────────────
 
-/**
- * One row per column of the matrix, describing what that column holds.
- *
- * Built from the SAME column list the matrix is built from, so the two cannot
- * drift apart — a test asserts one row per column, in the same order. Without
- * it the matrix is a wall of headers whose blanks are ambiguous: on a
- * multiple-choice column an empty cell means «was never asked», which is not
- * something anybody can guess six months later.
- *
- * `Versión` is here because option IDS are stable but option SETS are not: a
- * cross-tab that pools two versions of a reworked question is corrupt, and
- * without the version nothing would say so.
- */
-export function buildCodebookCsv(rows: ResponseRow[]): string {
-  const spine = buildSpine(rows)
-  const columns = matrixColumns(spine, overflowKeys(rows, spine))
-  const byKey = new Map(spine.map((question) => [question.key, question]))
+interface CodebookEntry {
+  code: string
+  humanColumn: string
+  section: string
+  label: string
+  text: string
+  type: string
+  unit: string
+  values: string
+  base: string
+  wave: string
+}
 
+/**
+ * One entry per MICRODATA column — the primary artefact — with the heading of
+ * the human file beside it where there is one, so the same dictionary serves
+ * the analyst reading codes and the Consejo reading Spanish.
+ *
+ * `Base` is the routing condition, read from the live questionnaire rather
+ * than from the snapshot: `showIf` is not snapshotted, and a dictionary
+ * describes the instrument as it stands, not as one respondent saw it.
+ */
+function codebookEntries(rows: ResponseRow[]): CodebookEntry[] {
+  const spine = buildSpine(rows)
+  const columns = microdataColumns(spine)
+  const human = new Map(
+    matrixColumns(spine, overflowKeys(rows, spine)).map((column) => [column.key, column.header]),
+  )
+  const registry = CODE_REGISTRY.codes as Record<string, { since?: string } | undefined>
+
+  const entries = columns.map((column) => {
+    const question = column.question
+    const suffix = column.optionId ?? column.rowId
+    const humanKey = suffix ? `${question.key}\u0000${suffix}` : question.key
+
+    return {
+      code: column.code,
+      humanColumn: human.get(humanKey) ?? '',
+      section: question.sectionName,
+      label: question.label,
+      text: question.text,
+      type: typeLabel(question.type),
+      unit: question.unit ?? '',
+      values: codebookValues(column, question),
+      base: baseOf(question.audience, question.id),
+      wave: registry[column.code]?.since ?? '',
+    }
+  })
+
+  // The open question is in no list of questions, so it escapes the loop and
+  // would be the one microdata column with nothing describing it.
+  if (rows.some((row) => wasAskedOpenQuestion(row.questionnaire, row.open_answer))) {
+    entries.push({
+      code: OPEN_ANSWER_CODE,
+      humanColumn: E.openAnswer,
+      section: '',
+      label: E.openAnswer,
+      text: QUESTIONNAIRES.company.openQuestion?.text ?? '',
+      type: E.typeText,
+      unit: '',
+      values: E.dictTextFlag,
+      base: E.baseEveryone,
+      wave: registry[OPEN_ANSWER_CODE]?.since ?? '',
+    })
+  }
+
+  return entries
+}
+
+function codebookValues(column: MicroColumn, question: SpineQuestion): string {
+  switch (column.kind) {
+    case 'single':
+      return question.options.map((option) => `${option.id} = ${option.text}`).join(' | ')
+    case 'multiOption':
+      return E.dictBinary
+    case 'selectedCount':
+      return E.dictCount
+    case 'item':
+    case 'numeric':
+      return question.type === 'number' ? E.dictNumber : scaleValues(question)
+    case 'textFlag':
+      return E.dictTextFlag
+    default:
+      return ''
+  }
+}
+
+/** Who was asked this question, in words. */
+function baseOf(audience: string, questionId: string): string {
+  const questionnaire = QUESTIONNAIRES[audience as AudienceId]
+  const question = questionnaire?.questions.find((entry) => entry.id === questionId)
+  if (!question) return ''
+  if (!question.showIf) return E.baseEveryone
+
+  const parent = questionnaire.questions.find((entry) => entry.id === question.showIf!.questionId)
+  const options = question.showIf.optionIds
+    .map((id) => {
+      const found = parent && hasOptions(parent) ? parent.options.find((o) => o.id === id) : undefined
+      return found?.text ?? id
+    })
+    .join(' | ')
+
+  return format(E.baseConditional, { question: parent?.label ?? question.showIf.questionId, options })
+}
+
+export function buildCodebookCsv(rows: ResponseRow[]): string {
   const headers = [
+    E.code,
     E.dictColumn,
+    E.section,
     E.question,
     E.statement,
-    E.section,
     E.kind,
     E.dictUnit,
     E.dictValues,
-    E.version,
+    E.dictBase,
+    E.dictWave,
   ]
 
-  const body = columns.map((column) => {
-    const question = byKey.get(column.spineKey)
-    if (!question) return [column.header, column.questionId, '', '', '', '', '', '']
-    return [
-      column.header,
-      question.label,
-      question.text,
-      question.sectionName,
-      typeLabel(question.type),
-      question.unit ?? '',
-      possibleValues(question, column),
-      question.version,
-    ]
-  })
-
-  // The open question is not in `questions[]`, so it escapes every loop over
-  // them — and would otherwise be the one column with no entry.
-  if (rows.some((row) => wasAskedOpenQuestion(row.questionnaire, row.open_answer))) {
-    body.push([E.openAnswer, E.openAnswer, '', '', E.typeText, '', E.dictFree, ''])
-  }
+  const body = codebookEntries(rows).map((entry) => [
+    entry.code,
+    entry.humanColumn,
+    entry.section,
+    entry.label,
+    entry.text,
+    entry.type,
+    entry.unit,
+    entry.values,
+    entry.base,
+    entry.wave,
+  ])
 
   return toCsv(headers, body)
+}
+
+/** The same dictionary, for a program rather than a person. */
+export function buildCodebookJson(rows: ResponseRow[]): string {
+  return `${JSON.stringify(
+    {
+      wave: CODE_REGISTRY.currentWave,
+      sentinels: Object.entries(SENTINELS).map(([value, meaning]) => ({
+        value: Number(value),
+        meaning,
+      })),
+      columns: codebookEntries(rows),
+    },
+    null,
+    2,
+  )}\n`
 }
 
 function typeLabel(type: SpineQuestion['type']): string {
@@ -730,27 +893,6 @@ function typeLabel(type: SpineQuestion['type']): string {
       return E.typeNumber
     default:
       return E.typeText
-  }
-}
-
-function possibleValues(question: SpineQuestion, column: MatrixColumn): string {
-  // An overflow column holds raw ids no snapshot explains, whatever the type.
-  if (column.overflow) return E.dictFree
-
-  switch (question.type) {
-    case 'single_choice':
-      return question.options.map((option) => option.text).join(' | ')
-    // Each option became a column of its own, so the values are the three
-    // states — and the blank is the one nobody can guess.
-    case 'multi_choice':
-      return E.dictYesNoBlank
-    case 'scale':
-    case 'scale_grid':
-      return scaleValues(question)
-    case 'number':
-      return E.dictNumber
-    default:
-      return E.dictFree
   }
 }
 

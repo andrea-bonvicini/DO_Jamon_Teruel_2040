@@ -144,7 +144,13 @@ describe('reducer', () => {
     state = reducer(state, { type: 'GO_NEXT', stepCount: 9 })
     state = reducer(state, { type: 'SET_SUBMISSION', status: 'sent' })
 
-    expect(reducer(state, { type: 'RESET' })).toEqual(INITIAL_STATE)
+    const reset = reducer(state, { type: 'RESET' })
+
+    // Everything back to the start, except the clock: a new questionnaire is
+    // a new respondent, so its duration is measured from now, not from when
+    // the tab was first opened.
+    expect({ ...reset, startedAt: '' }).toEqual({ ...INITIAL_STATE, startedAt: '' })
+    expect(Date.parse(reset.startedAt)).toBeGreaterThanOrEqual(Date.parse(INITIAL_STATE.startedAt))
   })
 
   it('stores a submission error message and drops it on the next status', () => {

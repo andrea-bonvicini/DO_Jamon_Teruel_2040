@@ -31,3 +31,24 @@ create index if not exists responses_identification_idx
 -- RLS enabled with ZERO policies: only the service_role key — used exclusively
 -- server-side, never shipped to the browser — can read or write this table.
 alter table responses enable row level security;
+
+-- 2026-09-30 · Fieldwork metadata for the microdata export.
+--
+-- `wave` is stamped server-side from the WAVE environment variable, never by
+-- the client: a wave is a fieldwork round and a respondent has no say in it.
+-- It is NOT the same thing as `questionnaire_version` — the content changed
+-- mid-wave on 2026-09-28 — and conflating them would break exactly the
+-- wave-over-wave comparison the codes exist to allow.
+--
+-- `started_at` comes from the browser, so it is the one field here that a
+-- respondent could in principle forge. It is used for duration only, never
+-- for anything that matters.
+--
+-- NOTE: rows written before this migration have NULL in all four. That is
+-- correct and must stay distinguishable from a real value.
+alter table responses add column if not exists wave              text;
+alter table responses add column if not exists started_at        timestamptz;
+alter table responses add column if not exists completion_status text
+  check (completion_status in ('complete', 'partial'));
+
+create index if not exists responses_wave_idx on responses (wave);

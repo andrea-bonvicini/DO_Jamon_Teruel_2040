@@ -10,6 +10,8 @@ export interface SubmissionPayload {
   answers: Answers
   openAnswer: string | null
   snapshot: QuestionnaireSnapshot
+  /** When this respondent opened the questionnaire, for the duration field. */
+  startedAt: string | null
 }
 
 /**

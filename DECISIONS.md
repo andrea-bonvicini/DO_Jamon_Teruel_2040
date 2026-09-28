@@ -827,3 +827,76 @@ descargas**: la matriz de empresas pasa a 69 columnas con una columna Sí/No por
 una columna de texto por cada seguimiento, con las palabras escritas dentro y **vacío —no «No»—**
 en quien no llegó a verlas; el diccionario describe las 13 columnas nuevas; y «Otros» aparece en el
 recuento de limitantes con su línea propia.
+
+## 2026-09-30 — Capa de datos: microdatos, códigos y dos perfiles de CSV
+
+Un encargo de reestructuración pedía sustituir «el CSV de frecuencias» por microdatos. La premisa
+era falsa: **los microdatos ya existían** desde el 24/09 (`respuestas-<público>.csv`, una fila por
+respondente). Lo que faltaba de verdad era otra cosa, y es lo que se ha hecho.
+
+También se corrigió el diagnóstico de colinealidad: los cuatro segmentos daban recuentos idénticos
+porque **producción tenía cuatro filas y las cuatro eran de prueba**. Con n=3, dos variables
+cualesquiera son colineales por aritmética. El detector se ha construido igual, porque es correcto
+tenerlo, pero lo que detecta hoy es el tamaño de la muestra.
+
+### Los códigos son los identificadores que ya había
+
+El encargo pedía acuñar códigos nuevos (`B0_Q1_O3`). No se ha hecho, y conviene saber por qué:
+`C-Q01` y `C-Q01.secadero` **ya cumplen todo lo que ese esquema perseguía** —inmutables, declarados
+en la definición de la pregunta, desacoplados del texto, guardados en el snapshot, y demostradamente
+intactos tras las reescrituras del 28/09—. Un segundo nombre para la misma cosa es precisamente la
+condición en la que dos nombres acaban divergiendo. El bloque no se pierde: viaja como `sectionId` y
+el diccionario lo lleva en su propia columna.
+
+Lo que sí faltaba, y era el defecto real, es que **esos identificadores nunca llegaban a las
+exportaciones**: los tres CSV se apoyaban solo en rótulos en español. `grep C-Q0` daba cero.
+
+`src/data/codeRegistry.json` guarda los 220 códigos con su oleada de alta, y `tests/data/codes.test.ts`
+falla si uno se reutiliza, se renombra o desaparece sin marcarse retirado.
+
+### Tres valores negativos en vez de una celda vacía
+
+`-97` no se le mostró · `-98` declinó · `-99` se le preguntó y no contestó. Como blancos, los tres
+eran un solo hecho, y esa diferencia decide si una base es 30 o 120. Se eligieron centinelas
+negativos —la convención de SPSS y Stata— porque mantienen la columna numérica; el coste, dicho sin
+adornos, es que quien promedie sin leer el diccionario obtiene basura, y por eso van declarados en
+el JSON y fijados por tests.
+
+**`-98` no aparece todavía.** No existe ningún «prefiero no contestar» en la aplicación. La columna
+queda definida y sin uso hasta que se añada esa afordancia, que sería Tier B.
+
+### Dos perfiles de CSV, y un test que impide unificarlos
+
+Máquina (`,` `.` sin BOM, RFC 4180) para los microdatos; Excel-ES (`;` `,` con BOM) para lo que se
+abre a mano. Hay un test que fija que una coma decimal viaje **sin comillas** en el perfil Excel,
+porque ahí es lo que la mantiene numérica — es el fallo del 24/09, convertido en regresión.
+
+### Lo que NO se hizo como pedía el encargo
+
+**El fichero de frecuencias no se genera desde los microdatos.** Sigue tabulando desde las
+respuestas, y lo que garantiza que ambos describan una sola realidad es un **test de round-trip**
+que agrega los microdatos y compara con los recuentos, opción por opción (más de 20 columnas
+comparadas). Es la misma garantía con mucho menos riesgo que reescribir código correcto y cubierto.
+Si se prefiere la derivación literal, es un refactor acotado y el test ya está puesto para cubrirlo.
+
+**Las respuestas parciales no se guardan.** Requiere tocar el aviso de privacidad —que promete
+tratar «sus respuestas», no lo de quien abandonó sin enviar— y ese texto lo aprueba el Consejo. Sí
+se instrumenta lo que no lo toca: `wave`, `started_at`, `completion_status` y la duración derivada.
+
+### El límite que ningún campo arregla
+
+El cuestionario es un enlace abierto, sin lista de invitados ni censo conocido. **No hay tasa de
+respuesta posible** y la muestra es autoseleccionada: los resultados describen a quien contestó y no
+se pueden proyectar al sector. Queda escrito en el `README.md` nuevo, porque es lo que condiciona
+cualquier informe que salga de aquí.
+
+### Comprobado
+
+366 tests, `typecheck`, `lint`, `build` y el detector en cero. Los seis formatos generados y
+abiertos: los microdatos de empresas salen con 71 columnas, sin BOM, con `C-Q05.local` en binario y
+`C-Q05.n_selected` al lado. El detector de colinealidad dispara sobre un reparto 2-vs-1 y calla
+cuando los cortes son distintos.
+
+**`npm run export` no funciona todavía desde esta máquina**: `SUPABASE_URL` y
+`SUPABASE_SERVICE_ROLE_KEY` están **vacías** en el `.env` local —solo se configuraron en Vercel— y
+la orden avisa de ello y se detiene. Los constructores sí están verificados, a través del panel.

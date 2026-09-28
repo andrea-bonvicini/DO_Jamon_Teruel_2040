@@ -4,10 +4,13 @@ import { hasValidAdminSession } from '../../server/auth.js'
 import { attachment } from '../../server/csv.js'
 import {
   buildCodebookCsv,
+  buildCodebookJson,
   buildFrequencyCsv,
   buildMatrixCsv,
+  buildStatisticsCsv,
   exportFilename,
 } from '../../server/exports.js'
+import { buildMicrodataCsv, buildOpenTextCsv } from '../../server/microdata.js'
 import type { ExportFormat } from '../../server/exports.js'
 import { EXPORT_LIMIT, parseListFilters } from '../../server/listFilters.js'
 import { getResponse, listResponsesForExport } from '../../server/responsesRepository.js'
@@ -21,7 +24,7 @@ export default withErrorHandling(async (req: ApiRequest, res: ApiResponse) => {
 
   const format = (singleParam(req.query, 'format') ?? 'matrix') as ExportFormat
   if (!BUILDERS[format]) {
-    res.status(400).json({ error: 'format must be "matrix", "frequency" or "codebook".' })
+    res.status(400).json({ error: `format must be one of: ${Object.keys(BUILDERS).join(', ')}.` })
     return
   }
 
@@ -44,13 +47,18 @@ export default withErrorHandling(async (req: ApiRequest, res: ApiResponse) => {
 })
 
 const BUILDERS: Record<ExportFormat, (rows: Parameters<typeof buildMatrixCsv>[0]) => string> = {
+  microdata: buildMicrodataCsv,
+  opentext: buildOpenTextCsv,
   matrix: buildMatrixCsv,
   frequency: buildFrequencyCsv,
+  statistics: buildStatisticsCsv,
   codebook: buildCodebookCsv,
+  codebookJson: buildCodebookJson,
 }
 
 function sendCsv(res: ApiResponse, filename: string, csv: string): void {
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  const type = filename.endsWith('.json') ? 'application/json' : 'text/csv'
+  res.setHeader('Content-Type', `${type}; charset=utf-8`)
   res.setHeader('Content-Disposition', attachment(filename))
   res.status(200).send(csv)
 }

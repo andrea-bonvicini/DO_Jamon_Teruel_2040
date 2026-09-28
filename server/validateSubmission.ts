@@ -21,6 +21,12 @@ export interface ValidSubmission {
   answers: Answers
   openAnswer: string | null
   snapshot: QuestionnaireSnapshot
+  /**
+   * When the browser says the respondent started. Used for duration only —
+   * it is the one field here a respondent could forge, so nothing that
+   * matters is allowed to depend on it.
+   */
+  startedAt: string | null
 }
 
 export type ValidationResult =
@@ -96,6 +102,7 @@ export function validateSubmission(input: unknown): ValidationResult {
       identification: identificationResult.value,
       answers: answers as Answers,
       openAnswer: openAnswerResult.value,
+      startedAt: parseStartedAt(input.startedAt),
       // Rebuilt server-side rather than trusting the client's copy, so the
       // stored wording is always the wording this deploy actually serves.
       snapshot: buildSnapshot(questionnaire, answers as Answers),
@@ -261,4 +268,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function fail(error: string): { ok: false; error: string } {
   return { ok: false, error }
+}
+
+/** An ISO instant, or nothing. Anything unparseable is simply dropped. */
+function parseStartedAt(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const parsed = Date.parse(value)
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null
 }

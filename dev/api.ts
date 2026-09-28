@@ -21,10 +21,13 @@ import { hasValidAdminSession, loginCookie, logoutCookie, verifyPassword } from 
 import { attachment } from '../server/csv.js'
 import {
   buildCodebookCsv,
+  buildCodebookJson,
   buildFrequencyCsv,
   buildMatrixCsv,
+  buildStatisticsCsv,
   exportFilename,
 } from '../server/exports.js'
+import { buildMicrodataCsv, buildOpenTextCsv } from '../server/microdata.js'
 import type { ExportFormat } from '../server/exports.js'
 import { EXPORT_LIMIT, parseListFilters } from '../server/listFilters.js'
 import type { ApiRequest } from '../server/http.js'
@@ -196,7 +199,7 @@ export async function handleDevApi(
     const format = (url.searchParams.get('format') ?? 'matrix') as ExportFormat
     const build = DEV_BUILDERS[format]
     if (!build) {
-      return json(res, 400, { error: 'format must be "matrix", "frequency" or "codebook".' }), true
+      return json(res, 400, { error: `format must be one of: ${Object.keys(DEV_BUILDERS).join(', ')}.` }), true
     }
 
     const id = url.searchParams.get('id')
@@ -215,14 +218,19 @@ export async function handleDevApi(
 }
 
 const DEV_BUILDERS: Record<ExportFormat, (rows: ResponseRow[]) => string> = {
+  microdata: buildMicrodataCsv,
+  opentext: buildOpenTextCsv,
   matrix: buildMatrixCsv,
   frequency: buildFrequencyCsv,
+  statistics: buildStatisticsCsv,
   codebook: buildCodebookCsv,
+  codebookJson: buildCodebookJson,
 }
 
 function sendCsv(res: ServerResponse, filename: string, csv: string): void {
+  const type = filename.endsWith('.json') ? 'application/json' : 'text/csv'
   res.statusCode = 200
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Type', `${type}; charset=utf-8`)
   res.setHeader('Content-Disposition', attachment(filename))
   res.end(csv)
 }

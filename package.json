@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "oxlint src server api tests",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "export": "node scripts/export.mjs"
   },
   "dependencies": {
     "@fontsource/source-sans-3": "^5.2.5",
