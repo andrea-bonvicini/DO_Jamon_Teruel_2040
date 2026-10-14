@@ -73,6 +73,37 @@ const submission: ValidSubmission = {
   snapshot: buildSnapshot(QUESTIONNAIRES.company, answers),
 }
 
+describe('when Supabase cannot be reached', () => {
+  // A paused free-tier project — which is what a week of no traffic buys you
+  // — answers nothing at all, and supabase-js reports that as a bare
+  // `TypeError: fetch failed`. On its own that names neither the service nor
+  // anything the reader can do, and it is what lands in the admin panel.
+  const unreachable = { message: 'TypeError: fetch failed' }
+
+  it('says where to look instead of «fetch failed»', async () => {
+    const { client } = fakeClient({ error: unreachable })
+
+    await expect(listResponses(baseFilters, client)).rejects.toThrow(/Supabase/)
+    await expect(listResponses(baseFilters, client)).rejects.toThrow(/Restore project/)
+  })
+
+  it('covers reading one response, counting and exporting too', async () => {
+    for (const run of [
+      () => getResponse('abc', fakeClient({ error: unreachable }).client),
+      () => listResponsesForExport(baseFilters, fakeClient({ error: unreachable }).client),
+      () => insertResponse(submission, fakeClient({ error: unreachable }).client),
+    ]) {
+      await expect(run()).rejects.toThrow(/pausa/)
+    }
+  })
+
+  it('leaves a real query error exactly as Supabase worded it', async () => {
+    // Those are worth reading verbatim; rewriting them would hide the cause.
+    const { client } = fakeClient({ error: { message: 'column "wave" does not exist' } })
+    await expect(listResponses(baseFilters, client)).rejects.toThrow(/column "wave" does not exist/)
+  })
+})
+
 describe('insertResponse', () => {
   it('maps the camelCase payload onto snake_case columns', async () => {
     const { client, calls } = fakeClient({ data: { id: 'new-id' } })

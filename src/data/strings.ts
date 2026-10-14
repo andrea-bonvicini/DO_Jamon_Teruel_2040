@@ -225,6 +225,11 @@ export const STRINGS = {
 
   errors: {
     generic: 'Se ha producido un error inesperado.',
+    // Supabase pauses a free project after about a week without traffic, and
+    // a paused project stops answering altogether. That is the first thing to
+    // check, so the message says it instead of leaving «fetch failed».
+    databaseUnreachable:
+      'No se ha podido contactar con la base de datos. Si el proyecto de Supabase lleva días sin uso puede estar en pausa: entre en supabase.com, abra el proyecto y pulse «Restore project».',
   },
 } as const
 

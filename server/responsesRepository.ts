@@ -1,3 +1,4 @@
+import { STRINGS } from '../src/data/strings.js'
 import { currentWave } from './wave.js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { QuestionnaireSnapshot } from '../src/data/snapshot.js'
@@ -9,6 +10,19 @@ import type { ListFilters } from './listFilters.js'
 import type { ValidSubmission } from './validateSubmission.js'
 
 /** One row as it comes back from Postgres. */
+/**
+ * What to put in front of a human when Supabase says no.
+ *
+ * An unreachable project arrives as a bare `TypeError: fetch failed`, which
+ * names neither the service nor anything to do about it. Everything else is
+ * passed through untouched: a real query error is worth reading verbatim.
+ */
+function describe(error: { message: string }): string {
+  return /fetch failed|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|network/i.test(error.message)
+    ? STRINGS.errors.databaseUnreachable
+    : error.message
+}
+
 export interface ResponseRow {
   id: string
   created_at: string
@@ -62,7 +76,7 @@ export async function insertResponse(
     .select('id')
     .single()
 
-  if (error) throw new Error(`Could not save the response: ${error.message}`)
+  if (error) throw new Error(`Could not save the response: ${describe(error)}`)
   return (data as { id: string }).id
 }
 
@@ -88,7 +102,7 @@ export async function listResponses(
     limit: Math.min(filters.limit, DEFAULT_LIST_LIMIT),
   })
 
-  if (error) throw new Error(`Could not read the responses: ${error.message}`)
+  if (error) throw new Error(`Could not read the responses: ${describe(error)}`)
   return (data ?? []) as unknown as ResponseListRow[]
 }
 
@@ -113,7 +127,7 @@ export async function countResponsesByAudience(
         .select('id', { count: 'exact', head: true })
         .eq('respondent_type', audience)
 
-      if (error) throw new Error(`Could not count the responses: ${error.message}`)
+      if (error) throw new Error(`Could not count the responses: ${describe(error)}`)
       return [audience, count ?? 0] as const
     }),
   )
@@ -127,7 +141,7 @@ export async function getResponse(
 ): Promise<ResponseRow | null> {
   const { data, error } = await client.from(TABLE).select('*').eq('id', id).maybeSingle()
 
-  if (error) throw new Error(`Could not read the response: ${error.message}`)
+  if (error) throw new Error(`Could not read the response: ${describe(error)}`)
   return (data as ResponseRow | null) ?? null
 }
 
@@ -140,6 +154,6 @@ export async function listResponsesForExport(
     limit: Math.min(filters.limit, EXPORT_LIMIT),
   })
 
-  if (error) throw new Error(`Could not read the responses: ${error.message}`)
+  if (error) throw new Error(`Could not read the responses: ${describe(error)}`)
   return (data ?? []) as unknown as ResponseRow[]
 }
